@@ -3,27 +3,54 @@ import mongoose from "mongoose";
 const jobSeekerSchema = new mongoose.Schema({
   email: {
     type: String,
-    required: [true, "Email is required"],
+    required: true,
     unique: true,
     lowercase: true,
     trim: true,
-    match: [/^\S+@\S+\.\S+$/, "Please provide a valid email"],
   },
   password: {
     type: String,
-    required: [true, "Password is required"],
-    minlength: [6, "Password must be at least 6 characters"],
+    required: true,
+    minlength: 6,
   },
   userType: {
     type: String,
     default: "jobseeker",
     immutable: true,
   },
-  // Profile fields (add in Week 2)
+  // Profile fields
   fullName: String,
+  phone: String,
+  location: String,
+  bio: String,
   skills: [String],
-  education: String,
-  experience: String,
+  experience: [{
+    title: String,
+    company: String,
+    location: String,
+    startDate: Date,
+    endDate: Date,
+    current: Boolean,
+    description: String
+  }],
+  education: [{
+    degree: String,
+    school: String,
+    field: String,
+    startDate: Date,
+    endDate: Date,
+    description: String
+  }],
+  certifications: [{
+    name: String,
+    issuer: String,
+    date: Date,
+    url: String
+  }],
+  savedJobs: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Job'
+  }],
   createdAt: {
     type: Date,
     default: Date.now,
