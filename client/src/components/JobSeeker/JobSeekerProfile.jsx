@@ -1,231 +1,460 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Briefcase, 
   User, 
-  FileText,  
-  Search, 
-  Bell, 
-  LogOut,
-  Home,
-  Bookmark,
-  Settings,
-  MessageSquare
+  Mail, 
+  Phone, 
+  MapPin, 
+  Edit2, 
+  Save, 
+  X, 
+  Plus, 
+  Trash2,
+  Briefcase,
+  GraduationCap,
+  Award,
+  Calendar,
+  Link as LinkIcon,
+  Upload,
+  Camera
 } from 'lucide-react';
 
-
-import JobSeekerProfile from './JobSeekerProfile';
-import JobSearch from './JobSearch';
-import Applications from './Applications';
-import SavedJobs from './SavedJobs';
-import JobRecommendations from './JobRecommendations';
-
-
-const JobSeekerDashboard = () => {
-  const [activeTab, setActiveTab] = useState('home');
-  const [userData, setUserData] = useState(null);
-  const [notifications, setNotifications] = useState([]);
+const JobSeekerProfile = ({ userData, onUpdate }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    location: '',
+    bio: '',
+    skills: [],
+    website: '',
+    linkedin: '',
+    github: ''
+  });
+  const [newSkill, setNewSkill] = useState('');
 
   useEffect(() => {
-    fetchUserData();
-    fetchNotifications();
-  }, []);
+    if (userData) {
+      setFormData({
+        fullName: userData.fullName || '',
+        email: userData.email || '',
+        phone: userData.phone || '',
+        location: userData.location || '',
+        bio: userData.bio || '',
+        skills: userData.skills || [],
+        website: userData.website || '',
+        linkedin: userData.linkedin || '',
+        github: userData.github || ''
+      });
+    }
+  }, [userData]);
 
-  const fetchUserData = async () => {
+  const handleInputChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleAddSkill = () => {
+    if (newSkill.trim() && !formData.skills.includes(newSkill.trim())) {
+      setFormData({
+        ...formData,
+        skills: [...formData.skills, newSkill.trim()]
+      });
+      setNewSkill('');
+    }
+  };
+
+  const handleRemoveSkill = (skillToRemove) => {
+    setFormData({
+      ...formData,
+      skills: formData.skills.filter(skill => skill !== skillToRemove)
+    });
+  };
+
+  const handleSave = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5001/api/auth/me', {
+      const response = await fetch('http://localhost:5001/api/jobseeker/profile', {
+        method: 'PUT',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        }
+        },
+        body: JSON.stringify(formData)
       });
-      const data = await response.json();
+
       if (response.ok) {
-        setUserData(data.user);
+        setIsEditing(false);
+        if (onUpdate) onUpdate();
       }
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error('Error updating profile:', error);
     }
   };
 
-  const fetchNotifications = async () => {
-    setNotifications([
-      { id: 1, message: 'New job match found!', read: false },
-      { id: 2, message: 'Application status updated', read: false }
-    ]);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userType');
-    window.location.href = '/';
-  };
-
-  
-  const navigation = [
-    { id: 'home', label: 'Home', icon: Home },
-    { id: 'search', label: 'Search Jobs', icon: Search },
-    { id: 'applications', label: 'My Applications', icon: Briefcase },
-    { id: 'saved', label: 'Saved Jobs', icon: Bookmark },
-    { id: 'profile', label: 'Profile', icon: User },
-  ];
-
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'home':
-        return <JobRecommendations userData={userData} />;
-      case 'search':
-        return <JobSearch userData={userData} />;
-      case 'applications':
-        return <Applications userData={userData} />;
-      case 'saved':
-        return <SavedJobs userData={userData} />;
-      case 'profile':
-        return <JobSeekerProfile userData={userData} onUpdate={fetchUserData} />;
-      default:
-        return <JobRecommendations userData={userData} />;
+  const handleCancel = () => {
+    if (userData) {
+      setFormData({
+        fullName: userData.fullName || '',
+        email: userData.email || '',
+        phone: userData.phone || '',
+        location: userData.location || '',
+        bio: userData.bio || '',
+        skills: userData.skills || [],
+        website: userData.website || '',
+        linkedin: userData.linkedin || '',
+        github: userData.github || ''
+      });
     }
+    setIsEditing(false);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation Bar */}
-      <nav className="bg-white border-b border-gray-200 fixed w-full top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <div className="flex items-center gap-2">
-              <Briefcase className="text-indigo-600" size={32} />
-              <span className="text-2xl font-bold text-gray-900">JobLink</span>
-            </div>
+    <div className="space-y-6">
+      {/* Cover Photo & Profile Header */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        {/* Cover Photo */}
+        <div className="h-48 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 relative">
+          {isEditing && (
+            <button className="absolute top-4 right-4 px-4 py-2 bg-white/90 backdrop-blur-sm text-gray-700 rounded-lg hover:bg-white flex items-center gap-2 shadow-lg">
+              <Camera size={16} />
+              Change Cover
+            </button>
+          )}
+        </div>
 
-            {/* Search Bar */}
-            <div className="flex-1 max-w-2xl mx-8">
+        {/* Profile Info */}
+        <div className="px-8 pb-8">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between -mt-20 gap-6">
+            <div className="flex flex-col md:flex-row gap-6 items-start md:items-end">
+              {/* Profile Picture */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                  type="text"
-                  placeholder="Search jobs, companies, skills..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                />
+                <div className="w-40 h-40 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center text-white text-5xl font-bold shadow-2xl border-4 border-white">
+                  {formData.fullName?.[0]?.toUpperCase() || formData.email?.[0]?.toUpperCase() || 'U'}
+                </div>
+                {isEditing && (
+                  <button className="absolute bottom-2 right-2 p-2 bg-white rounded-full shadow-lg hover:bg-gray-50 border border-gray-200">
+                    <Camera size={18} className="text-gray-700" />
+                  </button>
+                )}
+              </div>
+
+              {/* Name & Details */}
+              <div className="pb-2">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                  {formData.fullName || 'Add Your Name'}
+                </h1>
+                <div className="flex flex-wrap gap-4 text-gray-600">
+                  {formData.location && (
+                    <div className="flex items-center gap-1">
+                      <MapPin size={16} className="text-gray-400" />
+                      <span>{formData.location}</span>
+                    </div>
+                  )}
+                  {formData.email && (
+                    <div className="flex items-center gap-1">
+                      <Mail size={16} className="text-gray-400" />
+                      <span>{formData.email}</span>
+                    </div>
+                  )}
+                  {formData.phone && (
+                    <div className="flex items-center gap-1">
+                      <Phone size={16} className="text-gray-400" />
+                      <span>{formData.phone}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Right Side Icons */}
-            <div className="flex items-center gap-4">
-              <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
-                <Bell size={24} />
-                {notifications.filter(n => !n.read).length > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                )}
+            {/* Action Buttons */}
+            {!isEditing ? (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 shadow-lg hover:shadow-xl transition-all"
+              >
+                <Edit2 size={18} />
+                Edit Profile
               </button>
-
-              <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
-                <MessageSquare size={24} />
-              </button>
-
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
-                  {userData?.email?.[0]?.toUpperCase() || 'U'}
-                </div>
+            ) : (
+              <div className="flex gap-3">
                 <button
-                  onClick={handleLogout}
-                  className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                  title="Logout"
+                  onClick={handleCancel}
+                  className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all"
                 >
-                  <LogOut size={20} />
+                  <X size={18} />
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 shadow-lg hover:shadow-xl transition-all"
+                >
+                  <Save size={18} />
+                  Save Changes
                 </button>
               </div>
+            )}
+          </div>
+
+          {/* Bio */}
+          {(formData.bio || isEditing) && (
+            <div className="mt-6">
+              {isEditing ? (
+                <textarea
+                  name="bio"
+                  value={formData.bio}
+                  onChange={handleInputChange}
+                  rows="3"
+                  placeholder="Write a brief bio about yourself..."
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"
+                />
+              ) : (
+                <p className="text-gray-700 leading-relaxed">{formData.bio}</p>
+              )}
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* Contact & Links */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-indigo-100 rounded-lg">
+            <LinkIcon className="text-indigo-600" size={24} />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">Contact & Links</h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+              <User size={16} />
+              Full Name
+            </label>
+            {isEditing ? (
+              <input
+                type="text"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleInputChange}
+                placeholder="Your full name"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+              />
+            ) : (
+              <p className="text-gray-900 py-3">{formData.fullName || 'Not provided'}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+              <Phone size={16} />
+              Phone Number
+            </label>
+            {isEditing ? (
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                placeholder="+1 (555) 000-0000"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+              />
+            ) : (
+              <p className="text-gray-900 py-3">{formData.phone || 'Not provided'}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+              <MapPin size={16} />
+              Location
+            </label>
+            {isEditing ? (
+              <input
+                type="text"
+                name="location"
+                value={formData.location}
+                onChange={handleInputChange}
+                placeholder="City, Country"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+              />
+            ) : (
+              <p className="text-gray-900 py-3">{formData.location || 'Not provided'}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+              <Mail size={16} />
+              Email Address
+            </label>
+            <p className="text-gray-900 py-3">{formData.email}</p>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+              <LinkIcon size={16} />
+              Website
+            </label>
+            {isEditing ? (
+              <input
+                type="url"
+                name="website"
+                value={formData.website}
+                onChange={handleInputChange}
+                placeholder="https://yourwebsite.com"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+              />
+            ) : (
+              <p className="text-gray-900 py-3">{formData.website || 'Not provided'}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+              <LinkIcon size={16} />
+              LinkedIn
+            </label>
+            {isEditing ? (
+              <input
+                type="url"
+                name="linkedin"
+                value={formData.linkedin}
+                onChange={handleInputChange}
+                placeholder="linkedin.com/in/username"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+              />
+            ) : (
+              <p className="text-gray-900 py-3">{formData.linkedin || 'Not provided'}</p>
+            )}
           </div>
         </div>
-      </nav>
+      </div>
 
-      {/* Main Layout */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8">
-        <div className="flex gap-6">
-          {/* Left Sidebar - Navigation */}
-          <aside className="w-64 flex-shrink-0">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 sticky top-20">
-              <nav className="p-4 space-y-1">
-                {navigation.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => setActiveTab(item.id)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                        activeTab === item.id
-                          ? 'bg-indigo-50 text-indigo-600'
-                          : 'text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      <Icon size={20} />
-                      <span className="font-medium">{item.label}</span>
-                    </button>
-                  );
-                })}
-              </nav>
+      {/* Skills Section */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <Award className="text-purple-600" size={24} />
             </div>
-          </aside>
-
-          {/* Main Content Area */}
-          <main className="flex-1">
-            {renderContent()}
-          </main>
-
-          {/* Right Sidebar - Profile Summary & Suggestions */}
-          <aside className="w-80 flex-shrink-0">
-            <div className="space-y-4 sticky top-20">
-              {/* Profile Completion Card */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">Profile Strength</h3>
-                <div className="mb-3">
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-indigo-600 h-2 rounded-full" style={{ width: '60%' }}></div>
-                  </div>
-                  <p className="text-sm text-gray-600 mt-2">60% Complete</p>
-                </div>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2 text-gray-600">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    Email verified
-                  </li>
-                  <li className="flex items-center gap-2 text-gray-600">
-                    <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-                    Add skills
-                  </li>
-                  <li className="flex items-center gap-2 text-gray-600">
-                    <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-                    Complete profile
-                  </li>
-                </ul>
-              </div>
-
-              {/* Quick Stats */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">Quick Stats</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Applications</span>
-                    <span className="font-semibold text-gray-900">0</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Saved Jobs</span>
-                    <span className="font-semibold text-gray-900">0</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Profile Views</span>
-                    <span className="font-semibold text-gray-900">0</span>
-                  </div>
-                </div>
-              </div>
+            <h2 className="text-2xl font-bold text-gray-900">Skills & Expertise</h2>
+          </div>
+          <span className="px-4 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold">
+            {formData.skills.length} skills
+          </span>
+        </div>
+        
+        {isEditing && (
+          <div className="mb-6">
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={newSkill}
+                onChange={(e) => setNewSkill(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleAddSkill()}
+                placeholder="Add a skill (e.g., React, Node.js, Python)..."
+                className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+              />
+              <button
+                onClick={handleAddSkill}
+                className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 flex items-center gap-2 shadow-lg hover:shadow-xl transition-all"
+              >
+                <Plus size={18} />
+                Add Skill
+              </button>
             </div>
-          </aside>
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-3">
+          {formData.skills.length === 0 ? (
+            <div className="w-full text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+              <Award className="mx-auto text-gray-400 mb-3" size={48} />
+              <p className="text-gray-500 font-medium">No skills added yet</p>
+              <p className="text-gray-400 text-sm mt-1">Click "Edit Profile" to add your skills</p>
+            </div>
+          ) : (
+            formData.skills.map((skill, index) => (
+              <span
+                key={index}
+                className="group inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 text-indigo-700 rounded-xl text-sm font-semibold hover:shadow-md transition-all"
+              >
+                {skill}
+                {isEditing && (
+                  <button
+                    onClick={() => handleRemoveSkill(skill)}
+                    className="text-indigo-500 hover:text-red-600 transition-colors"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </span>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Work Experience */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-blue-100 rounded-lg">
+            <Briefcase className="text-blue-600" size={24} />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">Work Experience</h2>
+        </div>
+        <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+          <Briefcase className="mx-auto text-gray-400 mb-3" size={48} />
+          <p className="text-gray-500 font-medium">No work experience added yet</p>
+          <p className="text-gray-400 text-sm mt-1">Add your professional experience to stand out</p>
+          <button className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2 mx-auto">
+            <Plus size={16} />
+            Add Experience
+          </button>
+        </div>
+      </div>
+
+      {/* Education */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-green-100 rounded-lg">
+            <GraduationCap className="text-green-600" size={24} />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">Education</h2>
+        </div>
+        <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+          <GraduationCap className="mx-auto text-gray-400 mb-3" size={48} />
+          <p className="text-gray-500 font-medium">No education added yet</p>
+          <p className="text-gray-400 text-sm mt-1">Add your educational background</p>
+          <button className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2 mx-auto">
+            <Plus size={16} />
+            Add Education
+          </button>
+        </div>
+      </div>
+
+      {/* Certifications */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-amber-100 rounded-lg">
+            <Award className="text-amber-600" size={24} />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">Certifications & Awards</h2>
+        </div>
+        <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+          <Award className="mx-auto text-gray-400 mb-3" size={48} />
+          <p className="text-gray-500 font-medium">No certifications added yet</p>
+          <p className="text-gray-400 text-sm mt-1">Showcase your achievements and certifications</p>
+          <button className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2 mx-auto">
+            <Plus size={16} />
+            Add Certification
+          </button>
         </div>
       </div>
     </div>
   );
 };
 
-export default JobSeekerDashboard;
+export default JobSeekerProfile;
