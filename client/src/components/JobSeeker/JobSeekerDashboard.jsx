@@ -13,12 +13,11 @@ import {
 } from 'lucide-react';
 
 
-import JobSeekerProfile from './JobSeekerProfile';  // ← Removed ./JobSeeker/
-import JobSearch from './JobSearch';  // ← Removed ./JobSeeker/
-import Applications from './Applications';  // ← Removed ./JobSeeker/
-import SavedJobs from './SavedJobs';  // ← Removed ./JobSeeker/
-import ResumeBuilder from './ResumeBuilder';  // ← Removed ./JobSeeker/
-import JobRecommendations from './JobRecommendations';  // ← Removed ./JobSeeker/
+import JobSeekerProfile from './JobSeekerProfile'; 
+import JobSearch from './JobSearch';  
+import Applications from './Applications';  
+import SavedJobs from './SavedJobs';    
+import JobRecommendations from './JobRecommendations'; 
 
 const JobSeekerDashboard = () => {
   const [activeTab, setActiveTab] = useState('home');
@@ -65,7 +64,6 @@ const JobSeekerDashboard = () => {
     { id: 'search', label: 'Search Jobs', icon: Search },
     { id: 'applications', label: 'My Applications', icon: Briefcase },
     { id: 'saved', label: 'Saved Jobs', icon: Bookmark },
-    { id: 'resume', label: 'Resume Builder', icon: FileText },
     { id: 'profile', label: 'Profile', icon: User },
   ];
 
@@ -79,8 +77,6 @@ const JobSeekerDashboard = () => {
         return <Applications userData={userData} />;
       case 'saved':
         return <SavedJobs userData={userData} />;
-      case 'resume':
-        return <ResumeBuilder userData={userData} />;
       case 'profile':
         return <JobSeekerProfile userData={userData} onUpdate={fetchUserData} />;
       default:
