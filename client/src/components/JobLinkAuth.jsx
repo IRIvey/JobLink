@@ -53,16 +53,16 @@ const JobLinkAuth = () => {
       const data = await response.json();
 
       if (response.ok) {
-        setMessage({ type: 'success', text: data.message || 'Success!' });
-        if (data.token) {
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('userType', data.userType);
-          // Redirect to dashboard after successful login
-          setTimeout(() => {
-            setMessage({ type: 'success', text: `Welcome! Redirecting to ${data.userType} dashboard...` });
-          }, 1000);
-        }
-      } else {
+  setMessage({ type: 'success', text: data.message || 'Success!' });
+  if (data.token) {
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('userType', data.userType);
+    setTimeout(() => {
+      setMessage({ type: 'success', text: `Welcome! Redirecting to ${data.userType} dashboard...` });
+      window.location.reload(); // ← ADD THIS LINE
+    }, 1000);
+  }
+} else {
         setMessage({ type: 'error', text: data.message || 'Authentication failed!' });
       }
     } catch (error) {

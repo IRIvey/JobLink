@@ -13,12 +13,12 @@ import {
 } from 'lucide-react';
 
 
-import JobSeekerProfile from './JobSeeker/JobSeekerProfile';
-import JobSearch from './JobSeeker/JobSearch';
-import Applications from './JobSeeker/Applications';
-import SavedJobs from './JobSeeker/SavedJobs';
-import ResumeBuilder from './JobSeeker/ResumeBuilder';
-import JobRecommendations from './JobSeeker/JobRecommendations';
+import JobSeekerProfile from './JobSeekerProfile';  // ← Removed ./JobSeeker/
+import JobSearch from './JobSearch';  // ← Removed ./JobSeeker/
+import Applications from './Applications';  // ← Removed ./JobSeeker/
+import SavedJobs from './SavedJobs';  // ← Removed ./JobSeeker/
+import ResumeBuilder from './ResumeBuilder';  // ← Removed ./JobSeeker/
+import JobRecommendations from './JobRecommendations';  // ← Removed ./JobSeeker/
 
 const JobSeekerDashboard = () => {
   const [activeTab, setActiveTab] = useState('home');
