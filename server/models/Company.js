@@ -60,6 +60,16 @@ companyName: {
     "Other"
   ],
 },
+  totalEmployees: {
+    type: Number,
+    required: [true, "Total number of employees is required"],
+    min: [1, "There must be at least 1 employee"],
+  },
+  logo: {
+  type: String,
+  trim: true,
+  default: "", // optional, can be empty if no logo is provided
+  },
   createdAt: {
     type: Date,
     default: Date.now,
