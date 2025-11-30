@@ -6,7 +6,11 @@ import authRoutes from "./routes/authRoutes.js";
 import jobSeekerRoutes from "./routes/jobSeekerRoutes.js"; // NEW
 import jobRoutes from "./routes/jobRoutes.js"; // NEW
 import applicationRoutes from "./routes/applicationRoutes.js"; // NEW
+<<<<<<< HEAD
 import resumeRoutes from "./routes/resumeRoutes.js";
+=======
+import companyRoutes from "./routes/companyRoutes.js"; 
+>>>>>>> f3b7fea2c22f0fc824ea4aa461ce831bf2e8ed1b
 
 dotenv.config();
 
@@ -28,7 +32,11 @@ app.use("/api/auth", authRoutes);
 app.use("/api/jobseeker", jobSeekerRoutes); // NEW
 app.use("/api/jobs", jobRoutes); // NEW
 app.use("/api/applications", applicationRoutes); // NEW
+<<<<<<< HEAD
 app.use("/api/resume", resumeRoutes); 
+=======
+app.use("/api/companies", companyRoutes);
+>>>>>>> f3b7fea2c22f0fc824ea4aa461ce831bf2e8ed1b
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
