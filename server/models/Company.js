@@ -11,16 +11,20 @@ const companySchema = new mongoose.Schema({
     match: [/^\S+@\S+\.\S+$/, "Please provide a valid email"],
   },
   password: {
-    type: String,
-    required: [true, "Password is required"],
-    minlength: [6, "Password must be at least 6 characters"],
-  },
+  type: String,
+  required: [true, "Password is required"],
+  minlength: [6, "Password must be at least 6 characters"],
+  match: [
+    /^(?=.*[0-9])(?=.*[!@#$%^&*])/,
+    "Password must contain at least one digit and one special character (!@#$%^&*)"
+  ],
+},
   userType: {
     type: String,
     default: "company",
     immutable: true,
   },
-companyName: {
+  companyName: {
     type: String,
     required: [true, "Company name is required"],
     trim: true,
@@ -69,7 +73,7 @@ companyName: {
   logo: {
   type: String,
   trim: true,
-  default: "", // optional, can be empty if no logo is provided
+  default: "", 
   },
   createdAt: {
     type: Date,
@@ -78,7 +82,7 @@ companyName: {
 });
 
 companySchema.pre("save", async function(next) {
-  if (!this.isModified("password")) return next(); // Only hash if password is new or modified
+  if (!this.isModified("password")) return next(); 
 
   try {
     const salt = await bcrypt.genSalt(10);
