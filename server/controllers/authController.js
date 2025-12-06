@@ -28,14 +28,10 @@ export const registerJobSeeker = async (req, res) => {
       return res.status(400).json({ message: "Email already registered as Job Seeker" });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
     // Create new job seeker
     const jobSeeker = await JobSeeker.create({
       email,
-      password: hashedPassword,
+      password,
     });
 
     // Generate token
@@ -62,27 +58,50 @@ export const registerJobSeeker = async (req, res) => {
 // @access  Public
 export const registerCompany = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const {
+      email,
+      password,
+      companyName,
+      location,
+      description,
+      industry,
+      totalEmployees,
+      logo,
+    } = req.body;
 
-    // Validation
-    if (!email || !password) {
-      return res.status(400).json({ message: "Please provide email and password" });
+    // Basic validation
+    if (
+      !email ||
+      !password ||
+      !companyName ||
+      !location ||
+      !description ||
+      !industry ||
+      !totalEmployees
+    ) {
+      return res.status(400).json({
+        message: "All required fields must be provided",
+      });
     }
 
     // Check if company already exists
     const existingCompany = await Company.findOne({ email });
     if (existingCompany) {
-      return res.status(400).json({ message: "Email already registered as Company" });
+      return res.status(400).json({
+        message: "Company with this email already exists",
+      });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create new company
+    // Create company (password will be hashed by pre-save hook)
     const company = await Company.create({
       email,
-      password: hashedPassword,
+      password,
+      companyName,
+      location,
+      description,
+      industry,
+      totalEmployees,
+      logo: logo || "",
     });
 
     // Generate token
@@ -96,11 +115,24 @@ export const registerCompany = async (req, res) => {
         id: company._id,
         email: company.email,
         userType: "company",
+        companyName: company.companyName,
       },
     });
   } catch (error) {
     console.error("Register Company Error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+
+    // Mongoose validation errors
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map(
+        (err) => err.message
+      );
+      return res.status(400).json({ message: messages.join(", ") });
+    }
+
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
   }
 };
 
@@ -111,30 +143,35 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validation
+    // Validate input
     if (!email || !password) {
-      return res.status(400).json({ message: "Please provide email and password" });
+      return res.status(400).json({
+        message: "Please provide both email and password",
+      });
     }
 
-    // Check in JobSeeker collection
-    let user = await JobSeeker.findOne({ email });
-    let userType = "jobseeker";
+    // Find in Company or JobSeeker
+    let user = await Company.findOne({ email });
+    let userType = "company";
 
-    // If not found in JobSeeker, check Company collection
     if (!user) {
-      user = await Company.findOne({ email });
-      userType = "company";
+      user = await JobSeeker.findOne({ email });
+      userType = "jobseeker";
     }
 
     // User not found
     if (!user) {
-      return res.status(401).json({ message: "Invalid email or password" });
+      return res.status(401).json({
+        message: "Invalid email or password",
+      });
     }
 
-    // Check password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: "Invalid email or password" });
+    // Compare passwords
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({
+        message: "Invalid email or password",
+      });
     }
 
     // Generate token
@@ -152,7 +189,10 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     console.error("Login Error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
   }
 };
 
