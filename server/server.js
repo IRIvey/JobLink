@@ -3,11 +3,11 @@ import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
-import jobSeekerRoutes from "./routes/jobSeekerRoutes.js"; // NEW
-import jobRoutes from "./routes/jobRoutes.js"; // NEW
-import applicationRoutes from "./routes/applicationRoutes.js"; // NEW
-
-import resumeRoutes from "./routes/resumeRoutes.js"; // ← ADD THIS LINE
+import jobSeekerRoutes from "./routes/jobSeekerRoutes.js";
+import jobRoutes from "./routes/jobRoutes.js";
+import applicationRoutes from "./routes/applicationRoutes.js";
+import resumeRoutes from "./routes/resumeRoutes.js";
+import companyRoutes from "./routes/companyRoutes.js";
 
 dotenv.config();
 
@@ -26,10 +26,11 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
-app.use("/api/resume", resumeRoutes); // ← ADD THIS LINE
-app.use("/api/jobseeker", jobSeekerRoutes); // NEW
-app.use("/api/jobs", jobRoutes); // NEW
-app.use("/api/applications", applicationRoutes); // NEW
+app.use("/api/resume", resumeRoutes);
+app.use("/api/jobseeker", jobSeekerRoutes);
+app.use("/api/jobs", jobRoutes);
+app.use("/api/applications", applicationRoutes);
+app.use("/api/companies", companyRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
