@@ -6,6 +6,9 @@ import authRoutes from "./routes/authRoutes.js";
 import jobSeekerRoutes from "./routes/jobSeekerRoutes.js"; // NEW
 import jobRoutes from "./routes/jobRoutes.js"; // NEW
 import applicationRoutes from "./routes/applicationRoutes.js"; // NEW
+import resumeRoutes from "./routes/resumeRoutes.js";
+
+
 <<<<<<< HEAD
 import resumeRoutes from "./routes/resumeRoutes.js";
 =======
@@ -29,6 +32,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/resume", resumeRoutes);
 app.use("/api/jobseeker", jobSeekerRoutes); // NEW
 app.use("/api/jobs", jobRoutes); // NEW
 app.use("/api/applications", applicationRoutes); // NEW

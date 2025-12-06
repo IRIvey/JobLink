@@ -1,9 +1,9 @@
-import JobSeeker from '../models/JobSeeker.js';
+import JobSeeker from '../models/Job.js';
 
 // Get user's resume
 export const getResume = async (req, res) => {
   try {
-    const jobSeeker = await JobSeeker.findById(req.user.userId);
+    const jobSeeker = await JobSeeker.findById(req.user.id);
     
     if (!jobSeeker) {
       return res.status(404).json({ message: 'User not found' });
@@ -45,7 +45,7 @@ export const updateResume = async (req, res) => {
   try {
     const { resumeData } = req.body;
 
-    const jobSeeker = await JobSeeker.findById(req.user.userId);
+    const jobSeeker = await JobSeeker.findById(req.user.id);
     
     if (!jobSeeker) {
       return res.status(404).json({ message: 'User not found' });
@@ -70,7 +70,7 @@ export const updatePersonalInfo = async (req, res) => {
   try {
     const { personalInfo } = req.body;
 
-    const jobSeeker = await JobSeeker.findById(req.user.userId);
+    const jobSeeker = await JobSeeker.findById(req.user.id);
     
     if (!jobSeeker) {
       return res.status(404).json({ message: 'User not found' });
@@ -98,7 +98,7 @@ export const addExperience = async (req, res) => {
   try {
     const { experience } = req.body;
 
-    const jobSeeker = await JobSeeker.findById(req.user.userId);
+    const jobSeeker = await JobSeeker.findById(req.user.id);
     
     if (!jobSeeker) {
       return res.status(404).json({ message: 'User not found' });
@@ -136,7 +136,7 @@ export const updateExperience = async (req, res) => {
     const { experienceId } = req.params;
     const { experience } = req.body;
 
-    const jobSeeker = await JobSeeker.findById(req.user.userId);
+    const jobSeeker = await JobSeeker.findById(req.user.id);
     
     if (!jobSeeker) {
       return res.status(404).json({ message: 'User not found' });
@@ -166,7 +166,7 @@ export const deleteExperience = async (req, res) => {
   try {
     const { experienceId } = req.params;
 
-    const jobSeeker = await JobSeeker.findById(req.user.userId);
+    const jobSeeker = await JobSeeker.findById(req.user.id);
     
     if (!jobSeeker) {
       return res.status(404).json({ message: 'User not found' });
@@ -193,7 +193,7 @@ export const addEducation = async (req, res) => {
   try {
     const { education } = req.body;
 
-    const jobSeeker = await JobSeeker.findById(req.user.userId);
+    const jobSeeker = await JobSeeker.findById(req.user.id);
     
     if (!jobSeeker) {
       return res.status(404).json({ message: 'User not found' });
@@ -231,7 +231,7 @@ export const updateEducation = async (req, res) => {
     const { educationId } = req.params;
     const { education } = req.body;
 
-    const jobSeeker = await JobSeeker.findById(req.user.userId);
+    const jobSeeker = await JobSeeker.findById(req.user.id);
     
     if (!jobSeeker) {
       return res.status(404).json({ message: 'User not found' });
@@ -261,7 +261,7 @@ export const deleteEducation = async (req, res) => {
   try {
     const { educationId } = req.params;
 
-    const jobSeeker = await JobSeeker.findById(req.user.userId);
+    const jobSeeker = await JobSeeker.findById(req.user.id);
     
     if (!jobSeeker) {
       return res.status(404).json({ message: 'User not found' });
@@ -288,7 +288,7 @@ export const addProject = async (req, res) => {
   try {
     const { project } = req.body;
 
-    const jobSeeker = await JobSeeker.findById(req.user.userId);
+    const jobSeeker = await JobSeeker.findById(req.user.id);
     
     if (!jobSeeker) {
       return res.status(404).json({ message: 'User not found' });
@@ -326,7 +326,7 @@ export const updateProject = async (req, res) => {
     const { projectId } = req.params;
     const { project } = req.body;
 
-    const jobSeeker = await JobSeeker.findById(req.user.userId);
+    const jobSeeker = await JobSeeker.findById(req.user.id);
     
     if (!jobSeeker) {
       return res.status(404).json({ message: 'User not found' });
@@ -356,7 +356,7 @@ export const deleteProject = async (req, res) => {
   try {
     const { projectId } = req.params;
 
-    const jobSeeker = await JobSeeker.findById(req.user.userId);
+    const jobSeeker = await JobSeeker.findById(req.user.id);
     
     if (!jobSeeker) {
       return res.status(404).json({ message: 'User not found' });
@@ -383,7 +383,7 @@ export const updateSkills = async (req, res) => {
   try {
     const { skills } = req.body;
 
-    const jobSeeker = await JobSeeker.findById(req.user.userId);
+    const jobSeeker = await JobSeeker.findById(req.user.id);
     
     if (!jobSeeker) {
       return res.status(404).json({ message: 'User not found' });
@@ -411,7 +411,7 @@ export const addCertification = async (req, res) => {
   try {
     const { certification } = req.body;
 
-    const jobSeeker = await JobSeeker.findById(req.user.userId);
+    const jobSeeker = await JobSeeker.findById(req.user.id);
     
     if (!jobSeeker) {
       return res.status(404).json({ message: 'User not found' });
@@ -449,7 +449,7 @@ export const updateCertification = async (req, res) => {
     const { certificationId } = req.params;
     const { certification } = req.body;
 
-    const jobSeeker = await JobSeeker.findById(req.user.userId);
+    const jobSeeker = await JobSeeker.findById(req.user.id);
     
     if (!jobSeeker) {
       return res.status(404).json({ message: 'User not found' });
@@ -479,7 +479,7 @@ export const deleteCertification = async (req, res) => {
   try {
     const { certificationId } = req.params;
 
-    const jobSeeker = await JobSeeker.findById(req.user.userId);
+    const jobSeeker = await JobSeeker.findById(req.user.id);
     
     if (!jobSeeker) {
       return res.status(404).json({ message: 'User not found' });
@@ -504,7 +504,7 @@ export const deleteCertification = async (req, res) => {
 // Export resume as JSON (for download/backup)
 export const exportResume = async (req, res) => {
   try {
-    const jobSeeker = await JobSeeker.findById(req.user.userId);
+    const jobSeeker = await JobSeeker.findById(req.user.id);
     
     if (!jobSeeker) {
       return res.status(404).json({ message: 'User not found' });

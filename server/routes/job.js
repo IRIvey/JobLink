@@ -1,7 +1,7 @@
 import express from "express";
 import { protect } from "../middleware/authMiddleware.js";
 import Job from "../models/Job.js";
-import JobSeeker from "../models/Job.js";
+import JobSeeker from "../models/JobSeeker.js";
 
 const router = express.Router();
 

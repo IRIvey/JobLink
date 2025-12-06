@@ -1,4 +1,4 @@
-import JobSeeker from "../models/JobSeeker.js";
+import JobSeeker from "../models/Job.js";
 import Job from "../models/Job.js";
 import Application from "../models/Application.js";
 
