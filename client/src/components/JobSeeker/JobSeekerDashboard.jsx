@@ -1,4 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Briefcase, 
   User, 
@@ -12,15 +14,14 @@ import {
   MessageSquare
 } from 'lucide-react';
 
-
 import JobSeekerProfile from './JobSeekerProfile'; 
 import JobSearch from './JobSearch';  
 import Applications from './Applications';  
 import SavedJobs from './SavedJobs';    
 import JobRecommendations from './JobRecommendations';
-import ResumeBuilder from './ResumeBuilder';
 
 const JobSeekerDashboard = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('home');
   const [userData, setUserData] = useState(null);
   const [notifications, setNotifications] = useState([]);
@@ -60,12 +61,17 @@ const JobSeekerDashboard = () => {
     window.location.href = '/';
   };
 
+  const handleResumeBuilder = () => {
+    // Navigate to resume builder route
+    navigate('/resume-builder');
+  };
+
   const navigation = [
     { id: 'home', label: 'Home', icon: Home },
     { id: 'search', label: 'Search Jobs', icon: Search },
     { id: 'applications', label: 'My Applications', icon: Briefcase },
     { id: 'saved', label: 'Saved Jobs', icon: Bookmark },
-    { id: 'resume', label: 'My Resume', icon: FileText },
+    { id: 'resume', label: 'My Resume', icon: FileText, isExternal: true },
     { id: 'profile', label: 'Profile', icon: User },
   ];
 
@@ -79,8 +85,6 @@ const JobSeekerDashboard = () => {
         return <Applications userData={userData} />;
       case 'saved':
         return <SavedJobs userData={userData} />;
-      case 'resume':
-        return <ResumeBuilder userData={userData} />;
       case 'profile':
         return <JobSeekerProfile userData={userData} onUpdate={fetchUserData} />;
       default:
@@ -154,6 +158,21 @@ const JobSeekerDashboard = () => {
               <nav className="p-4 space-y-1">
                 {navigation.map((item) => {
                   const Icon = item.icon;
+                  
+                  // Special handling for resume builder
+                  if (item.id === 'resume') {
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={handleResumeBuilder}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-gray-700 hover:bg-indigo-50 hover:text-indigo-600"
+                      >
+                        <Icon size={20} />
+                        <span className="font-medium">{item.label}</span>
+                      </button>
+                    );
+                  }
+                  
                   return (
                     <button
                       key={item.id}
@@ -204,6 +223,15 @@ const JobSeekerDashboard = () => {
                     Upload resume
                   </li>
                 </ul>
+                
+                {/* Quick Resume Builder Access */}
+                <button
+                  onClick={handleResumeBuilder}
+                  className="w-full mt-4 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                >
+                  <FileText size={18} />
+                  Build Resume
+                </button>
               </div>
 
               {/* Quick Stats */}
