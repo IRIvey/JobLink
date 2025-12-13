@@ -121,23 +121,14 @@ const jobSeekerSchema = new mongoose.Schema({
   }
 });
 
-jobSeekerSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+jobSeekerSchema.pre("save", async function () {
+  this.updatedAt = new Date();
 
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (err) {
-    next(err);
-  }
+  if (!this.isModified("password")) return;
+
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
 });
 
+export default mongoose.models.JobSeeker || mongoose.model("JobSeeker", jobSeekerSchema);
 
-// Update the updatedAt field before saving
-jobSeekerSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
-});
-
-export default mongoose.model("JobSeeker", jobSeekerSchema);
