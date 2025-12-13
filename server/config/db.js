@@ -2,13 +2,17 @@ import mongoose from "mongoose";
 
 const connectDB = async () => {
   try {
-    const uri = process.env.MONGODB_URI || "mongodb://localhost:27017/joblink";
+    const uri = process.env.MONGODB_URI;
 
-    await mongoose.connect(uri); // ← NO OPTIONS NEEDED
+    if (!uri) {
+      throw new Error("MONGODB_URI is not defined");
+    }
+
+    await mongoose.connect(uri);
 
     console.log("✅ MongoDB connected:", uri);
   } catch (error) {
-    console.error("❌ MongoDB connection error:", error);
+    console.error("❌ MongoDB connection error:", error.message);
     process.exit(1);
   }
 };
