@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   client:
     build:
@@ -11,7 +9,7 @@ services:
       - ./client:/app
       - /app/node_modules
     environment:
-      - VITE_API_URL=http://localhost:5000
+      - VITE_API_URL=http://localhost:5001
     depends_on:
       - server
     stdin_open: true
@@ -22,25 +20,11 @@ services:
       context: ./server
       dockerfile: Dockerfile
     ports:
-      - "5001:5000"
+      - "5001:5001"
     volumes:
       - ./server:/app
       - /app/node_modules
+    env_file:
+      - ./server/.env
     environment:
       - NODE_ENV=development
-      - MONGODB_URI=mongodb://mongo:27017/joblink
-    depends_on:
-      - mongo
-
-  mongo:
-    image: mongo:latest
-    ports:
-      - "27017:27017"
-    restart: always
-    volumes:
-      - mongo-data:/data/db
-    environment:
-      - MONGO_INITDB_DATABASE=joblink
-
-volumes:
-  mongo-data:
