@@ -7,7 +7,14 @@ const CompanyAuth = () => {
     email: "",
     password: "",
     confirmPassword: "",
+    companyName: "",
+    location: "",
+    description: "",
+    industry: "",
+    totalEmployees: "",
+    logo: "",
   });
+
   const [message, setMessage] = useState({ type: "", text: "" });
 
   const handleInputChange = (e) => {
@@ -37,15 +44,29 @@ const CompanyAuth = () => {
           ? "http://localhost:5000/api/auth/company/login"
           : "http://localhost:5000/api/auth/company/register";
 
+      const payload =
+        authMode === "login"
+          ? {
+              email: formData.email,
+              password: formData.password,
+            }
+          : {
+              email: formData.email,
+              password: formData.password,
+              companyName: formData.companyName,
+              location: formData.location,
+              description: formData.description,
+              industry: formData.industry,
+              totalEmployees: Number(formData.totalEmployees),
+              logo: formData.logo || null,
+            };
+
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -142,6 +163,73 @@ const CompanyAuth = () => {
               </div>
             </div>
 
+            {/* Register-only fields */}
+            {authMode === "register" && (
+              <>
+                <input
+                  name="companyName"
+                  placeholder="Company Name"
+                  value={formData.companyName}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-3 border rounded-lg"
+                />
+
+                <input
+                  name="location"
+                  placeholder="Location"
+                  value={formData.location}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-3 border rounded-lg"
+                />
+
+                <textarea
+                  name="description"
+                  placeholder="Company Description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  required
+                  rows={3}
+                  className="w-full px-4 py-3 border rounded-lg"
+                />
+
+                <select
+                  name="industry"
+                  value={formData.industry}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-3 border rounded-lg"
+                >
+                  <option value="">Select Industry</option>
+                  <option value="IT">IT</option>
+                  <option value="Finance">Finance</option>
+                  <option value="Healthcare">Healthcare</option>
+                  <option value="Education">Education</option>
+                  <option value="Other">Other</option>
+                </select>
+
+                <input
+                  type="number"
+                  name="totalEmployees"
+                  placeholder="Total Employees"
+                  value={formData.totalEmployees}
+                  onChange={handleInputChange}
+                  required
+                  min={1}
+                  className="w-full px-4 py-3 border rounded-lg"
+                />
+
+                <input
+                  name="logo"
+                  placeholder="Logo URL (optional)"
+                  value={formData.logo}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border rounded-lg"
+                />
+              </>
+            )}
+
             {/* Password */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -163,7 +251,6 @@ const CompanyAuth = () => {
                 />
               </div>
             </div>
-
             {/* Confirm Password */}
             {authMode === "register" && (
               <div>
@@ -206,7 +293,7 @@ const CompanyAuth = () => {
               type="submit"
               className="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold transition-colors"
             >
-              {authMode === "login" ? "Login" : "Create Company Account"}
+              {authMode === "login" ? "Login" : "Create Company"}
             </button>
           </form>
         </div>

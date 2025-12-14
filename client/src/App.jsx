@@ -1,9 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import JobLinkAuth from "./components/Auth/JobLinkAuth.jsx";  
 import JobSeekerDashboard from "./components/JobSeeker/JobSeekerDashboard.jsx";
 import ResumeBuilder from "./components/JobSeeker/Resume.jsx";
+import CompanyAuth from "./components/Auth/CompanyAuth.jsx";
+import Home from "./components/Home.jsx";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -32,20 +33,29 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Public Route - Authentication */}
+        {/* Public Routes */}
+        <Route path="/" element={
+          isAuthenticated ? (
+            userType === 'jobseeker' ? <Navigate to="/dashboard" replace /> : <Navigate to="/company" replace />
+          ) : (
+            <Home />
+          )
+        } />
+
         <Route 
-          path="/auth" 
-          element={!isAuthenticated ? <JobLinkAuth /> : <Navigate to="/" replace />} 
+          path="/jobseeker-auth" 
+          element={!isAuthenticated ? <JobLinkAuth defaultMode="login" /> : <Navigate to="/" replace />} 
+        />
+
+        <Route
+          path="/company-auth"
+          element={!isAuthenticated ? <CompanyAuth /> : <Navigate to="/" replace />}
         />
 
         {/* Protected Routes - Job Seeker */}
         {isAuthenticated && userType === 'jobseeker' && (
           <>
-            {/* Dashboard Route */}
-            <Route path="/" element={<JobSeekerDashboard />} />
             <Route path="/dashboard" element={<JobSeekerDashboard />} />
-            
-            {/* Resume Builder - Separate Page */}
             <Route path="/resume-builder" element={<ResumeBuilder />} />
           </>
         )}
@@ -54,7 +64,7 @@ function App() {
         {isAuthenticated && userType === 'company' && (
           <>
             <Route 
-              path="/" 
+              path="/company" 
               element={
                 <div className="min-h-screen flex items-center justify-center">
                   <div className="text-center">
@@ -67,13 +77,15 @@ function App() {
           </>
         )}
 
-        {/* Redirect to auth if not authenticated */}
+        {/* Catch-All Redirect */}
         <Route 
           path="*" 
           element={
             isAuthenticated 
-              ? <Navigate to="/" replace /> 
-              : <Navigate to="/auth" replace />
+              ? userType === 'jobseeker' 
+                ? <Navigate to="/dashboard" replace /> 
+                : <Navigate to="/company" replace />
+              : <Navigate to="/" replace />
           } 
         />
       </Routes>
