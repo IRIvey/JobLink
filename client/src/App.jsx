@@ -44,12 +44,35 @@ function App() {
 
         <Route 
           path="/jobseeker-auth" 
-          element={!isAuthenticated ? <JobLinkAuth defaultMode="login" /> : <Navigate to="/" replace />} 
+         element={
+          !isAuthenticated ? (
+            <JobLinkAuth 
+              defaultMode="login" 
+              onAuthSuccess={(token) => {
+                setIsAuthenticated(true);
+                setUserType('jobseeker');
+              }}
+           />
+        ) : (
+          <Navigate to="/dashboard" replace />
+           )
+        } 
         />
 
         <Route
           path="/company-auth"
-          element={!isAuthenticated ? <CompanyAuth /> : <Navigate to="/" replace />}
+          element={
+            !isAuthenticated ? (
+              <CompanyAuth
+                onAuthSuccess={() => {
+                  setIsAuthenticated(true);
+                  setUserType('company');
+                }}
+              />
+            ) : (
+              <Navigate to="/company" replace />
+            )
+          }
         />
 
         {/* Protected Routes - Job Seeker */}

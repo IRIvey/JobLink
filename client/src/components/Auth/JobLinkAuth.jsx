@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Briefcase, Building2, User, Mail, Lock, ArrowRight, CheckCircle, Users } from 'lucide-react';
+import { Briefcase, User, Mail, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const JobLinkAuth = ({ defaultMode }) => {
+const JobLinkAuth = ({ defaultMode, onAuthSuccess }) => {
   const [authMode, setAuthMode] = useState(defaultMode || 'login'); // login or register
-  const [userType, setUserType] = useState(''); // jobseeker or company
   const [formData, setFormData] = useState({ email: '', password: '', confirmPassword: '' });
   const [message, setMessage] = useState({ type: '', text: '' });
   const navigate = useNavigate();
@@ -12,7 +11,6 @@ const JobLinkAuth = ({ defaultMode }) => {
   const resetForm = () => {
     setFormData({ email: '', password: '', confirmPassword: '' });
     setMessage({ type: '', text: '' });
-    setUserType('');
   };
 
   const handleInputChange = (e) => {
@@ -34,13 +32,11 @@ const JobLinkAuth = ({ defaultMode }) => {
     }
 
     try {
-      // Decide endpoint based on auth mode and user type
+      // Endpoint for login or jobseeker registration
       const endpoint =
         authMode === 'login'
           ? "http://localhost:5001/api/auth/login"
-          : userType === 'jobseeker'
-          ? "http://localhost:5001/api/auth/register/jobseeker"
-          : "http://localhost:5001/api/auth/register/company";
+          : "http://localhost:5001/api/auth/register/jobseeker";
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -54,8 +50,8 @@ const JobLinkAuth = ({ defaultMode }) => {
         setMessage({ type: 'success', text: data.message || 'Success!' });
         if (data.token) {
           localStorage.setItem('token', data.token);
-          localStorage.setItem('userType', userType || 'jobseeker');
-          setTimeout(() => navigate('/'), 1000); // redirect to dashboard after success
+          localStorage.setItem('userType', 'jobseeker');
+          if (onAuthSuccess) onAuthSuccess();
         }
       } else {
         setMessage({ type: 'error', text: data.message || 'Authentication failed!' });
@@ -92,31 +88,6 @@ const JobLinkAuth = ({ defaultMode }) => {
               Register
             </button>
           </div>
-
-          {/* User Type Selection for Registration */}
-          {authMode === 'register' && (
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-3">I am a:</label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setUserType('jobseeker')}
-                  className={`p-4 rounded-lg border-2 transition-all ${userType === 'jobseeker' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300'}`}
-                >
-                  <User className={`mx-auto mb-2 ${userType === 'jobseeker' ? 'text-indigo-600' : 'text-gray-400'}`} size={32} />
-                  <div className="font-medium text-gray-900">Job Seeker</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUserType('company')}
-                  className={`p-4 rounded-lg border-2 transition-all ${userType === 'company' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300'}`}
-                >
-                  <Building2 className={`mx-auto mb-2 ${userType === 'company' ? 'text-indigo-600' : 'text-gray-400'}`} size={32} />
-                  <div className="font-medium text-gray-900">Company</div>
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Form */}
           <form onSubmit={handleAuth} className="space-y-4">
@@ -183,8 +154,7 @@ const JobLinkAuth = ({ defaultMode }) => {
             {/* Submit */}
             <button
               type="submit"
-              disabled={authMode === 'register' && !userType}
-              className="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              className="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold transition-colors"
             >
               {authMode === 'login' ? 'Login' : 'Create Account'}
             </button>

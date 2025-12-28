@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Briefcase, Mail, Lock } from "lucide-react";
 
-const CompanyAuth = () => {
+const CompanyAuth = (onAuthSuccess) => {
   const [authMode, setAuthMode] = useState("login");
   const [formData, setFormData] = useState({
     email: "",
@@ -77,10 +77,7 @@ const CompanyAuth = () => {
         if (data.token) {
           localStorage.setItem("token", data.token);
           localStorage.setItem("userType", "company");
-
-          setTimeout(() => {
-            window.location.href = "/company-dashboard";
-          }, 1000);
+          if (onAuthSuccess) onAuthSuccess();
         }
       } else {
         setMessage({ type: "error", text: data.message || "Authentication failed!" });
