@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Briefcase, Mail, Lock } from "lucide-react";
 
-const CompanyAuth = (onAuthSuccess) => {
+const CompanyAuth = ({onAuthSuccess}) => {
   const [authMode, setAuthMode] = useState("login");
   const [formData, setFormData] = useState({
     email: "",
@@ -24,24 +24,52 @@ const CompanyAuth = (onAuthSuccess) => {
     });
   };
 
+  const validateEmail = (email) => {
+    const emailRegex = /^\S+@\S+\.\S+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePassword = (password) => {
+    const minLength = 6;
+    const digitRegex = /[0-9]/;
+    const specialCharRegex = /[!@#$%^&*]/;
+
+    if (password.length < minLength) {
+      return "Password must be at least 6 characters long";
+    }
+    if (!digitRegex.test(password)) {
+      return "Password must contain at least one digit";
+    }
+    if (!specialCharRegex.test(password)) {
+      return "Password must contain at least one special character (!@#$%^&*)";
+    }
+    return null;
+  };
+
   const handleAuth = async (e) => {
     e.preventDefault();
     setMessage({ type: "", text: "" });
+
+    if (!validateEmail(formData.email)) {
+      setMessage({ type: "error", text: "Please provide a valid email address" });
+      return;
+    }
+
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) {
+      setMessage({ type: "error", text: passwordError });
+      return;
+    }
 
     if (authMode === "register" && formData.password !== formData.confirmPassword) {
       setMessage({ type: "error", text: "Passwords do not match!" });
       return;
     }
 
-    if (formData.password.length < 6) {
-      setMessage({ type: "error", text: "Password must be at least 6 characters!" });
-      return;
-    }
-
     try {
       const endpoint =
         authMode === "login"
-          ? "http://localhost:5000/api/auth/company/login"
+          ? "http://localhost:5000/api/auth/login"
           : "http://localhost:5000/api/auth/company/register";
 
       const payload =

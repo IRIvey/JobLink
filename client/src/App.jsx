@@ -5,6 +5,7 @@ import JobSeekerDashboard from "./components/JobSeeker/JobSeekerDashboard.jsx";
 import ResumeBuilder from "./components/JobSeeker/Resume.jsx";
 import CompanyAuth from "./components/Auth/CompanyAuth.jsx";
 import Home from "./components/Home.jsx";
+import CompanyDashboard from "./components/Company/Companydashboard.jsx";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -86,17 +87,7 @@ function App() {
         {/* Protected Routes - Company */}
         {isAuthenticated && userType === 'company' && (
           <>
-            <Route 
-              path="/company" 
-              element={
-                <div className="min-h-screen flex items-center justify-center">
-                  <div className="text-center">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-4">Company Dashboard</h1>
-                    <p className="text-gray-600">Coming Soon...</p>
-                  </div>
-                </div>
-              } 
-            />
+            <Route path="/company" element={< CompanyDashboard />} />
           </>
         )}
 
