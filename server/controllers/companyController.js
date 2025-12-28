@@ -1,47 +1,6 @@
 import Company from "../models/Company.js";
 import bcrypt from "bcryptjs";
 
-export const createCompany = async (req, res) => {
-  try {
-    const {
-      email,
-      password,
-      companyName,
-      location,
-      description,
-      industry,
-      totalEmployees,
-      logo
-    } = req.body;
-
-    const existingCompany = await Company.findOne({ email });
-    if (existingCompany) {
-      return res.status(400).json({ message: "Company with this email already exists" });
-    }
-    
-    const newCompany = new Company({
-      email,
-      password,
-      companyName,
-      location,
-      description,
-      industry,
-      totalEmployees,
-      logo
-    });
-
-    await newCompany.save();
-
-    res.status(201).json({
-      message: "Company created successfully",
-      company: newCompany
-    });
-  } catch (error) {
-    console.error("Error creating company:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
-
 export const updateCompany = async (req, res) => {
   const { id } = req.params;
   const updates = { ...req.body };

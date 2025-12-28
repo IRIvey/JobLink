@@ -69,30 +69,48 @@ export const registerCompany = async (req, res) => {
       logo,
     } = req.body;
 
-    // Basic validation
-    if (
-      !email ||
-      !password ||
-      !companyName ||
-      !location ||
-      !description ||
-      !industry ||
-      !totalEmployees
-    ) {
-      return res.status(400).json({
-        message: "All required fields must be provided",
-      });
+    // 1️⃣ Basic validation
+    if (!email || !password || !companyName || !location || !description || !industry || !totalEmployees) {
+      return res.status(400).json({ message: "All required fields must be provided" });
     }
 
-    // Check if company already exists
+    // 2️⃣ Validate email format
+    const emailRegex = /^\S+@\S+\.\S+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
+
+    // 3️⃣ Validate password
+    const passwordErrors = [];
+    if (password.length < 6) passwordErrors.push("at least 6 characters");
+    if (!/[0-9]/.test(password)) passwordErrors.push("at least one digit");
+    if (!/[!@#$%^&*]/.test(password)) passwordErrors.push("at least one special character (!@#$%^&*)");
+    if (passwordErrors.length) {
+      return res.status(400).json({ message: `Password must contain ${passwordErrors.join(", ")}` });
+    }
+
+    // 4️⃣ Validate industry enum
+    const allowedIndustries = [
+      "IT","Finance","Healthcare","Education","Manufacturing","Retail",
+      "Real Estate","Telecommunications","Transportation","Media",
+      "Agriculture","Pharmaceuticals","Construction","Government","Consulting","Other"
+    ];
+    if (!allowedIndustries.includes(industry)) {
+      return res.status(400).json({ message: `Industry must be one of: ${allowedIndustries.join(", ")}` });
+    }
+
+    // 5️⃣ Validate totalEmployees
+    if (Number(totalEmployees) < 1) {
+      return res.status(400).json({ message: "Total Employees must be at least 1" });
+    }
+
+    // 6️⃣ Check for existing company email
     const existingCompany = await Company.findOne({ email });
     if (existingCompany) {
-      return res.status(400).json({
-        message: "Company with this email already exists",
-      });
+      return res.status(400).json({ message: "Company with this email already exists" });
     }
 
-    // Create company (password will be hashed by pre-save hook)
+    // 7️⃣ Create company (password will be hashed by pre-save hook)
     const company = await Company.create({
       email,
       password,
@@ -104,9 +122,10 @@ export const registerCompany = async (req, res) => {
       logo: logo || "",
     });
 
-    // Generate token
+    // 8️⃣ Generate JWT
     const token = generateToken(company._id, "company");
 
+    // 9️⃣ Return response
     res.status(201).json({
       message: "Company registered successfully",
       token,
@@ -121,18 +140,18 @@ export const registerCompany = async (req, res) => {
   } catch (error) {
     console.error("Register Company Error:", error);
 
-    // Mongoose validation errors
+    // Handle Mongoose validation errors
     if (error.name === "ValidationError") {
-      const messages = Object.values(error.errors).map(
-        (err) => err.message
-      );
+      const messages = Object.values(error.errors).map(err => err.message);
       return res.status(400).json({ message: messages.join(", ") });
     }
 
-    res.status(500).json({
-      message: "Server error",
-      error: error.message,
-    });
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
+
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 

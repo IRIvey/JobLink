@@ -47,73 +47,79 @@ const CompanyAuth = ({onAuthSuccess}) => {
   };
 
   const handleAuth = async (e) => {
-    e.preventDefault();
-    setMessage({ type: "", text: "" });
+  e.preventDefault();
+  setMessage({ type: "", text: "" });
 
-    if (!validateEmail(formData.email)) {
-      setMessage({ type: "error", text: "Please provide a valid email address" });
-      return;
-    }
+  // Frontend validation
+  if (!validateEmail(formData.email)) {
+    setMessage({ type: "error", text: "Please provide a valid email address" });
+    return;
+  }
 
-    const passwordError = validatePassword(formData.password);
-    if (passwordError) {
-      setMessage({ type: "error", text: passwordError });
-      return;
-    }
+  const passwordError = validatePassword(formData.password);
+  if (passwordError) {
+    setMessage({ type: "error", text: passwordError });
+    return;
+  }
 
-    if (authMode === "register" && formData.password !== formData.confirmPassword) {
-      setMessage({ type: "error", text: "Passwords do not match!" });
-      return;
-    }
+  if (authMode === "register" && formData.password !== formData.confirmPassword) {
+    setMessage({ type: "error", text: "Passwords do not match!" });
+    return;
+  }
 
-    try {
-      const endpoint =
-        authMode === "login"
-          ? "http://localhost:5000/api/auth/login"
-          : "http://localhost:5000/api/auth/company/register";
+  try {
+    const endpoint =
+      authMode === "login"
+        ? "http://localhost:5001/api/auth/login"
+        : "http://localhost:5001/api/auth/register/company";
 
-      const payload =
-        authMode === "login"
-          ? {
-              email: formData.email,
-              password: formData.password,
-            }
-          : {
-              email: formData.email,
-              password: formData.password,
-              companyName: formData.companyName,
-              location: formData.location,
-              description: formData.description,
-              industry: formData.industry,
-              totalEmployees: Number(formData.totalEmployees),
-              logo: formData.logo || null,
-            };
+    const payload =
+      authMode === "login"
+        ? {
+            email: formData.email,
+            password: formData.password,
+          }
+        : {
+            email: formData.email,
+            password: formData.password,
+            companyName: formData.companyName,
+            location: formData.location,
+            description: formData.description,
+            industry: formData.industry,
+            totalEmployees: Number(formData.totalEmployees),
+            logo: formData.logo || null,
+          };
 
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (response.ok) {
-        setMessage({ type: "success", text: data.message || "Success!" });
+    if (response.ok) {
+      setMessage({ type: "success", text: data.message || "Success!" });
 
-        if (data.token) {
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("userType", "company");
-          if (onAuthSuccess) onAuthSuccess();
-        }
-      } else {
-        setMessage({ type: "error", text: data.message || "Authentication failed!" });
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("userType", "company");
+        if (onAuthSuccess) onAuthSuccess();
       }
-    } catch (error) {
-      setMessage({ type: "error", text: "Server error. Please try again later." });
+    } else {
+      // If API sends multiple error messages (e.g., from validation)
+      if (data.message && typeof data.message === "string") {
+        setMessage({ type: "error", text: data.message });
+      } else if (data.message && Array.isArray(data.message)) {
+        setMessage({ type: "error", text: data.message.join(", ") });
+      } else {
+        setMessage({ type: "error", text: "Authentication failed!" });
+      }
     }
-  };
+  } catch (error) {
+    setMessage({ type: "error", text: "Server error. Please try again later." });
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
