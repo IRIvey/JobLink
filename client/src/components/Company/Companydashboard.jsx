@@ -16,14 +16,19 @@ const CompanyDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('home');
   const [companyData, setCompanyData] = useState(null);
-  const [jobs, setJobs] = useState([]);
-  const [applications, setApplications] = useState([]);
+  const [jobs, setJobs] = useState([]); // Initially empty
+  const [applications, setApplications] = useState([]); // Initially empty
   const [notifications, setNotifications] = useState([]);
+
+  const hasJobs = jobs.length > 0;
+  const hasApplications = applications.length > 0;
+  const hasNotifications = notifications.length > 0;
+  const isDashboardEmpty = !hasJobs && !hasApplications && !hasNotifications;
 
   useEffect(() => {
     fetchCompanyData();
-    fetchJobs();
-    fetchApplications();
+    fetchJobs(); // Now should fetch real data from API
+    fetchApplications(); // Now should fetch real data from API
     fetchNotifications();
   }, []);
 
@@ -40,24 +45,45 @@ const CompanyDashboard = () => {
     }
   };
 
-  const fetchJobs = () => {
-    setJobs([
-      { id: 1, title: 'Frontend Developer', status: 'Active' },
-      { id: 2, title: 'Backend Developer', status: 'Active' },
-    ]);
+  // Fetch jobs from API (replace with real endpoint)
+  const fetchJobs = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5001/api/jobs', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok) setJobs(data.jobs || []);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const fetchApplications = () => {
-    setApplications([
-      { id: 1, name: 'Alice', job: 'Frontend Dev' },
-      { id: 2, name: 'Bob', job: 'Backend Dev' },
-    ]);
+  // Fetch applications from API (replace with real endpoint)
+  const fetchApplications = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5001/api/applications', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok) setApplications(data.applications || []);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const fetchNotifications = () => {
-    setNotifications([
-      { id: 1, message: 'New application received', read: false }
-    ]);
+  const fetchNotifications = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5001/api/notifications', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok) setNotifications(data.notifications || []);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleLogout = () => {
@@ -68,6 +94,7 @@ const CompanyDashboard = () => {
 
   const navigation = [
     { id: 'home', label: 'Dashboard', icon: Home },
+    { id: 'post-job', label: 'Post Job', icon: Plus },
     { id: 'jobs', label: 'Job Postings', icon: Briefcase },
     { id: 'applications', label: 'Applications', icon: FileText },
     { id: 'profile', label: 'Profile', icon: User },
@@ -115,7 +142,63 @@ const CompanyDashboard = () => {
         );
 
       default:
-        return <div className="text-gray-600">Welcome back 👋</div>;
+        return (
+          <div className="space-y-6">
+
+            {/* Job Posts Section */}
+            {hasJobs && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-semibold mb-4">Your Job Posts</h2>
+                {jobs.slice(0, 5).map(job => (
+                  <div
+                    key={job.id}
+                    className="flex justify-between py-3 border-b last:border-none"
+                  >
+                    <span className="font-medium">{job.title}</span>
+                    <span className="text-sm text-green-600">{job.status}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Applications Section */}
+            {hasApplications && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-semibold mb-4">Recent Applications</h2>
+                {applications.slice(0, 5).map(app => (
+                  <div key={app.id} className="py-3 border-b last:border-none">
+                    <p className="font-medium">{app.name}</p>
+                    <p className="text-sm text-gray-500">{app.job}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Notifications Section */}
+            {hasNotifications && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-semibold mb-4">Notifications</h2>
+                {notifications.map(note => (
+                  <p key={note.id} className="text-gray-600 py-2">
+                    • {note.message}
+                  </p>
+                ))}
+              </div>
+            )}
+
+            {/* Empty State (ONLY when everything is empty) */}
+            {isDashboardEmpty && (
+              <div className="flex flex-col items-center justify-center h-64 text-center">
+                <Briefcase size={48} className="text-gray-300 mb-4" />
+                <p className="text-gray-500 text-lg">Nothing to show</p>
+                <p className="text-sm text-gray-400">
+                  Post a job to start receiving applications
+                </p>
+              </div>
+            )}
+
+          </div>
+        );
     }
   };
 
