@@ -133,6 +133,11 @@ licenses: [
   trim: true,
   default: "", 
   },
+  coverPhoto: {
+  type: String,
+  trim: true,
+  default: "",
+  },
   createdAt: {
     type: Date,
     default: Date.now,
