@@ -6,6 +6,7 @@ import ResumeBuilder from "./components/JobSeeker/Resume.jsx";
 import CompanyAuth from "./components/Auth/CompanyAuth.jsx";
 import Home from "./components/Home.jsx";
 import CompanyDashboard from "./components/Company/Companydashboard.jsx";
+import CompanyProfile from "./components/Company/CompanyProfilePage.jsx";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -88,6 +89,7 @@ function App() {
         {isAuthenticated && userType === 'company' && (
           <>
             <Route path="/company" element={< CompanyDashboard />} />
+            <Route path="/company/profile" element={<CompanyProfile />} />
           </>
         )}
 
