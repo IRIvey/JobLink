@@ -3,22 +3,18 @@ import bcrypt from "bcryptjs";
 
 export const getCompanyProfile = async (req, res) => {
   try {
-    const { id } = req.companyId ? { id: req.companyId } : req.params;
-
-    const company = await Company.findById(id).select("-password");
+    const company = await Company.findById(req.companyId).select("-password");
 
     if (!company) {
       return res.status(404).json({ success: false, message: "Company not found" });
     }
 
-    res.status(200).json({
-      success: true,
-      data: company,
-    });
+    res.status(200).json({ success: true, company });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }
 };
+
 
 
 export const updateCompany = async (req, res) => {
