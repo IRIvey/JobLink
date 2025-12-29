@@ -46,13 +46,13 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
   useEffect(() => {
     if (companyData) {
       setFormData({
-        name: companyData.name || '',
+        name: companyData.companyName || '',
         email: companyData.email || '',
         location: companyData.location || '',
         website: companyData.website || '',
         description: companyData.description || '',
         industry: companyData.industry || '',
-        employees: companyData.employees || '',
+        employees: companyData.totalEmployees || '',
       });
     }
   }, [companyData]);
@@ -85,13 +85,13 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
   const handleCancel = () => {
     if (companyData) {
       setFormData({
-        name: companyData.name || '',
+        name: companyData.companyName || '',
         email: companyData.email || '',
         location: companyData.location || '',
         website: companyData.website || '',
         description: companyData.description || '',
         industry: companyData.industry || '',
-        employees: companyData.employees || '',
+        employees: companyData.totalEmployees || '',
       });
     }
     setIsEditing(false);

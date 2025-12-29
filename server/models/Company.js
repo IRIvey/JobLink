@@ -65,6 +65,64 @@ const companySchema = new mongoose.Schema({
     "Other"
   ],
 },
+
+certificates: [
+  {
+    name: {
+      type: String,
+      trim: true,
+    },
+    fileUrl: {
+      type: String,
+      required: true,
+    },
+    fileType: {
+      type: String,
+      enum: ["pdf", "jpg", "jpeg"],
+      required: true,
+    },
+    uploadedAt: {
+      type: Date,
+      default: Date.now,
+    }
+  }
+],
+
+licenses: [
+  {
+    name: {               
+      type: String,
+      required: true,
+      trim: true,
+    },
+    licenseNumber: {       
+      type: String,
+      trim: true,
+    },
+    issuedBy: {          
+      type: String,
+      trim: true,
+    },
+    fileUrl: {            
+      type: String,
+      trim: true,
+    },
+    fileType: {            
+      type: String,
+      enum: ["pdf", "jpg", "jpeg"],
+    },
+    status: {              
+      type: String,
+      enum: ["Active", "Expired", "Pending"],
+      default: "Active",
+    },
+    createdAt: {          
+      type: Date,
+      default: Date.now,
+    }
+  }
+],
+
   totalEmployees: {
     type: Number,
     required: [true, "Total number of employees is required"],
