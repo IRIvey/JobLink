@@ -6,6 +6,6 @@ const router = express.Router();
 
 router.get("/companies/profile", protect, authorizeRoles("company"), getCompanyProfile);
 
-router.put("/companies/:id", protect, authorizeRoles("company"), updateCompany);
+router.put("/companies/profile", protect, authorizeRoles("company"), updateCompany);
 
 export default router;

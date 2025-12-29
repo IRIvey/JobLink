@@ -12,23 +12,20 @@ import {
   Search
 } from 'lucide-react';
 
+import CompanyProfile from './CompanyProfilePage';
+
 const CompanyDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('home');
   const [companyData, setCompanyData] = useState(null);
-  const [jobs, setJobs] = useState([]); // Initially empty
-  const [applications, setApplications] = useState([]); // Initially empty
+  const [jobs, setJobs] = useState([]);
+  const [applications, setApplications] = useState([]);
   const [notifications, setNotifications] = useState([]);
-
-  const hasJobs = jobs.length > 0;
-  const hasApplications = applications.length > 0;
-  const hasNotifications = notifications.length > 0;
-  const isDashboardEmpty = !hasJobs && !hasApplications && !hasNotifications;
 
   useEffect(() => {
     fetchCompanyData();
-    fetchJobs(); // Now should fetch real data from API
-    fetchApplications(); // Now should fetch real data from API
+    fetchJobs();
+    fetchApplications();
     fetchNotifications();
   }, []);
 
@@ -45,7 +42,6 @@ const CompanyDashboard = () => {
     }
   };
 
-  // Fetch jobs from API (replace with real endpoint)
   const fetchJobs = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -54,12 +50,9 @@ const CompanyDashboard = () => {
       });
       const data = await res.json();
       if (res.ok) setJobs(data.jobs || []);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
-  // Fetch applications from API (replace with real endpoint)
   const fetchApplications = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -68,9 +61,7 @@ const CompanyDashboard = () => {
       });
       const data = await res.json();
       if (res.ok) setApplications(data.applications || []);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const fetchNotifications = async () => {
@@ -81,9 +72,7 @@ const CompanyDashboard = () => {
       });
       const data = await res.json();
       if (res.ok) setNotifications(data.notifications || []);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const handleLogout = () => {
@@ -108,7 +97,6 @@ const CompanyDashboard = () => {
             <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg">
               <Plus size={16} /> Post New Job
             </button>
-
             {jobs.map(job => (
               <div key={job.id} className="bg-white p-4 rounded-xl shadow-sm flex justify-between">
                 <span className="font-medium">{job.title}</span>
@@ -117,7 +105,6 @@ const CompanyDashboard = () => {
             ))}
           </div>
         );
-
       case 'applications':
         return (
           <div className="space-y-4">
@@ -129,40 +116,25 @@ const CompanyDashboard = () => {
             ))}
           </div>
         );
-
       case 'profile':
-        return (
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Company Profile</h2>
-            <p><strong>Name:</strong> {companyData?.companyName}</p>
-            <p><strong>Email:</strong> {companyData?.email}</p>
-            <p><strong>Industry:</strong> {companyData?.industry}</p>
-            <p><strong>Location:</strong> {companyData?.location}</p>
-          </div>
-        );
-
+        return <CompanyProfile companyData={companyData} />;
       default:
         return (
           <div className="space-y-6">
-
             {/* Job Posts Section */}
-            {hasJobs && (
+            {jobs.length > 0 && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h2 className="text-xl font-semibold mb-4">Your Job Posts</h2>
                 {jobs.slice(0, 5).map(job => (
-                  <div
-                    key={job.id}
-                    className="flex justify-between py-3 border-b last:border-none"
-                  >
+                  <div key={job.id} className="flex justify-between py-3 border-b last:border-none">
                     <span className="font-medium">{job.title}</span>
                     <span className="text-sm text-green-600">{job.status}</span>
                   </div>
                 ))}
               </div>
             )}
-
             {/* Applications Section */}
-            {hasApplications && (
+            {applications.length > 0 && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h2 className="text-xl font-semibold mb-4">Recent Applications</h2>
                 {applications.slice(0, 5).map(app => (
@@ -173,30 +145,6 @@ const CompanyDashboard = () => {
                 ))}
               </div>
             )}
-
-            {/* Notifications Section */}
-            {hasNotifications && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-semibold mb-4">Notifications</h2>
-                {notifications.map(note => (
-                  <p key={note.id} className="text-gray-600 py-2">
-                    • {note.message}
-                  </p>
-                ))}
-              </div>
-            )}
-
-            {/* Empty State (ONLY when everything is empty) */}
-            {isDashboardEmpty && (
-              <div className="flex flex-col items-center justify-center h-64 text-center">
-                <Briefcase size={48} className="text-gray-300 mb-4" />
-                <p className="text-gray-500 text-lg">Nothing to show</p>
-                <p className="text-sm text-gray-400">
-                  Post a job to start receiving applications
-                </p>
-              </div>
-            )}
-
           </div>
         );
     }
@@ -204,7 +152,7 @@ const CompanyDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation */}
+      {/* Top Nav */}
       <nav className="bg-white border-b border-gray-200 fixed w-full top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -212,22 +160,17 @@ const CompanyDashboard = () => {
               <Briefcase className="text-indigo-600" size={32} />
               <span className="text-2xl font-bold text-gray-900">JobLink</span>
             </div>
-
             <div className="flex-1 max-w-2xl mx-8">
+              {/* Search Bar */}
               <div className="relative">
-                <Search
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  size={20}
-                />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                 <input
                   type="text"
                   placeholder="Search jobs, companies, skills..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg
-                             focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
               </div>
             </div>
-
             <div className="flex items-center gap-4">
               <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
                 <Bell size={24} />
@@ -235,7 +178,6 @@ const CompanyDashboard = () => {
                   <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                 )}
               </button>
-
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
                   {companyData?.email?.[0]?.toUpperCase() || 'C'}
@@ -255,7 +197,6 @@ const CompanyDashboard = () => {
 
       {/* Layout */}
       <div className="max-w-7xl mx-auto px-6 pt-24 flex gap-6">
-
         {/* Left Sidebar */}
         <aside className="w-64 flex-shrink-0">
           <div className="bg-white rounded-xl shadow-sm p-4 space-y-1 sticky top-24">
@@ -264,13 +205,7 @@ const CompanyDashboard = () => {
               return (
                 <button
                   key={item.id}
-                  onClick={() => {
-                    if (item.id === 'profile') {
-                      navigate("/company/profile"); 
-                    } else {
-                      setActiveTab(item.id);
-                    }
-                  }}
+                  onClick={() => setActiveTab(item.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     activeTab === item.id
                       ? 'bg-indigo-50 text-indigo-600'
@@ -287,21 +222,39 @@ const CompanyDashboard = () => {
 
         {/* Main Content */}
         <main className="flex-1 space-y-6">
-
-          {/* Stats Boxes below search bar */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <StatBox icon={Briefcase} label="Total Jobs" value={jobs.length} color="bg-indigo-100" textColor="text-indigo-600" />
-            <StatBox icon={FileText} label="Applications" value={applications.length} color="bg-green-100" textColor="text-green-600" />
-            <StatBox icon={CheckCircle} label="Active Jobs" value={jobs.filter(j => j.status==='Active').length} color="bg-purple-100" textColor="text-purple-600" />
-          </div>
-
+          {/* Quick Stats below Search Bar - only on home/dashboard */}
+          {activeTab === 'home' && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+              <StatBox 
+                icon={Briefcase} 
+                label="Total Jobs" 
+                value={jobs.length} 
+                color="bg-indigo-100" 
+                textColor="text-indigo-600"
+              />
+              <StatBox 
+                icon={FileText} 
+                label="Applications" 
+                value={applications.length} 
+                color="bg-green-100" 
+                textColor="text-green-600"
+              />
+              <StatBox 
+                icon={CheckCircle} 
+                label="Active Jobs" 
+                value={jobs.filter(j => j.status==='Active').length} 
+                color="bg-purple-100" 
+                textColor="text-purple-600"
+              />
+            </div>
+          )}
           {renderContent()}
         </main>
 
         {/* Right Sidebar */}
         <aside className="w-80 flex-shrink-0">
           <div className="space-y-4 sticky top-24">
-            {/* Profile Summary */}
+            {/* Profile Strength */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h3 className="font-semibold text-gray-900 mb-4">Profile Strength</h3>
               <div className="mb-3">
@@ -327,7 +280,6 @@ const CompanyDashboard = () => {
             </div>
           </div>
         </aside>
-
       </div>
     </div>
   );
@@ -337,7 +289,7 @@ const CompanyDashboard = () => {
 const StatBox = ({ icon: Icon, label, value, color, textColor }) => (
   <div className="bg-white rounded-xl shadow-sm p-5 flex items-center gap-4">
     <div className={`${color} p-3 rounded-lg`}>
-      <Icon className={textColor} size={22} />
+      <Icon className={textColor} size={22}/>
     </div>
     <div>
       <p className="text-sm text-gray-500">{label}</p>
