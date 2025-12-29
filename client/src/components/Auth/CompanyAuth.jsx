@@ -233,11 +233,11 @@ const CompanyAuth = ({onAuthSuccess}) => {
                   className="w-full px-4 py-3 border rounded-lg"
                 >
                   <option value="">Select Industry</option>
-                  <option value="IT">IT</option>
-                  <option value="Finance">Finance</option>
-                  <option value="Healthcare">Healthcare</option>
-                  <option value="Education">Education</option>
-                  <option value="Other">Other</option>
+                  {INDUSTRIES.map((industry) => (
+                    <option key={industry} value={industry}>
+                      {industry}
+                    </option>
+                  ))}
                 </select>
 
                 <input
