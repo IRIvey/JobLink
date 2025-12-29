@@ -15,6 +15,26 @@ const CompanyAuth = ({onAuthSuccess}) => {
     logo: "",
   });
 
+  const INDUSTRIES = [
+  "IT",
+  "Finance",
+  "Healthcare",
+  "Education",
+  "Manufacturing",
+  "Retail",
+  "Real Estate",
+  "Telecommunications",
+  "Transportation",
+  "Media",
+  "Agriculture",
+  "Pharmaceuticals",
+  "Construction",
+  "Government",
+  "Consulting",
+  "Other"
+];
+
+
   const [message, setMessage] = useState({ type: "", text: "" });
 
   const handleInputChange = (e) => {
@@ -232,7 +252,7 @@ const CompanyAuth = ({onAuthSuccess}) => {
                   required
                   className="w-full px-4 py-3 border rounded-lg"
                 >
-                  <option value="">Select Industry</option>
+                  <option value=""disabled>Select Industry</option>
                   {INDUSTRIES.map((industry) => (
                     <option key={industry} value={industry}>
                       {industry}
