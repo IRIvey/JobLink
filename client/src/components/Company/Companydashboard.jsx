@@ -227,7 +227,7 @@ const CompanyDashboard = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
               <StatBox 
                 icon={Briefcase} 
-                label="Total Jobs" 
+                label="Total Jobs Posted" 
                 value={jobs.length} 
                 color="bg-indigo-100" 
                 textColor="text-indigo-600"
@@ -241,7 +241,7 @@ const CompanyDashboard = () => {
               />
               <StatBox 
                 icon={CheckCircle} 
-                label="Active Jobs" 
+                label="Total Hired" 
                 value={jobs.filter(j => j.status==='Active').length} 
                 color="bg-purple-100" 
                 textColor="text-purple-600"
