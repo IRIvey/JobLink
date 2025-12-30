@@ -12,22 +12,94 @@ import {
   XCircle,
 } from "lucide-react";
 
-const Applicants = ({ applications, handleStatusChange }) => {
+const Applicants = ({ applications = [], handleStatusChange }) => {
+  const dummyApplications = [
+    {
+      id: 1,
+      name: "Sarah Johnson",
+      job: "Senior React Developer",
+      status: "New",
+      rating: 4.5,
+      experience: "5 years",
+      email: "sarah.j@email.com",
+      phone: "+1-555-0123",
+      appliedDate: "2024-12-28",
+      skills: ["React", "Node.js", "TypeScript"],
+    },
+    {
+      id: 2,
+      name: "Michael Chen",
+      job: "Senior React Developer",
+      status: "Reviewing",
+      rating: 4.8,
+      experience: "7 years",
+      email: "michael.c@email.com",
+      phone: "+1-555-0456",
+      appliedDate: "2024-12-27",
+      skills: ["React", "Python", "AWS"],
+    },
+    {
+      id: 3,
+      name: "Emily Rodriguez",
+      job: "Product Manager",
+      status: "Interview Scheduled",
+      rating: 4.6,
+      experience: "6 years",
+      email: "emily.r@email.com",
+      phone: "+1-555-0789",
+      appliedDate: "2024-12-26",
+      skills: ["Product Strategy", "Agile", "Data Analysis"],
+    },
+    {
+      id: 4,
+      name: "David Kim",
+      job: "Product Manager",
+      status: "Rejected",
+      rating: 4.3,
+      experience: "4 years",
+      email: "david.k@email.com",
+      phone: "+1-555-0321",
+      appliedDate: "2024-12-29",
+      skills: ["Roadmapping", "User Research", "SQL"],
+    },
+    {
+      id: 5,
+      name: "Aisha Rahman",
+      job: "UX Designer",
+      status: "Hired",
+      rating: 4.9,
+      experience: "3 years",
+      email: "aisha.r@email.com",
+      phone: "+880-17-1234-5678",
+      appliedDate: "2024-12-25",
+      skills: ["Figma", "User Research", "Design Systems"],
+    },
+  ];
+
+  // ✅ use dummy data if props are empty
+  const dataToShow = applications.length ? applications : dummyApplications;
+
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [filterStatus, setFilterStatus] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
   const statuses = ["All", "New", "Reviewing", "Interview Scheduled", "Rejected", "Hired"];
 
+  const safeHandleStatusChange =
+    handleStatusChange ||
+    (() => {
+      // no-op, so UI doesn't crash if you didn't pass handleStatusChange
+    });
+
   const filteredApplications = useMemo(() => {
-    return applications.filter((app) => {
+    return dataToShow.filter((app) => {
       const matchesFilter = filterStatus === "All" || app.status === filterStatus;
       const q = searchQuery.toLowerCase();
       const matchesSearch =
         app.name.toLowerCase().includes(q) || app.job.toLowerCase().includes(q);
       return matchesFilter && matchesSearch;
     });
-  }, [applications, filterStatus, searchQuery]);
+  }, [dataToShow, filterStatus, searchQuery]);
 
   return (
     <div className="space-y-4">
@@ -72,7 +144,9 @@ const Applicants = ({ applications, handleStatusChange }) => {
               key={app.id}
               onClick={() => setSelectedApplication(app)}
               className={`bg-white rounded-xl shadow-sm border p-4 cursor-pointer transition-all hover:shadow-md ${
-                selectedApplication?.id === app.id ? "border-indigo-500 ring-2 ring-indigo-200" : "border-gray-200"
+                selectedApplication?.id === app.id
+                  ? "border-indigo-500 ring-2 ring-indigo-200"
+                  : "border-gray-200"
               }`}
             >
               <div className="flex items-start justify-between mb-3">
@@ -212,7 +286,7 @@ const Applicants = ({ applications, handleStatusChange }) => {
                   {["New", "Reviewing", "Interview Scheduled", "Rejected", "Hired"].map((status) => (
                     <button
                       key={status}
-                      onClick={() => handleStatusChange(selectedApplication.id, status)}
+                      onClick={() => safeHandleStatusChange(selectedApplication.id, status)}
                       className={`px-3 py-1 text-sm rounded-lg transition-colors ${
                         selectedApplication.status === status
                           ? "bg-indigo-600 text-white"
