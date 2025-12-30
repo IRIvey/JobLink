@@ -32,6 +32,24 @@ const jobSchema = new mongoose.Schema({
     enum: ['Entry Level', 'Mid Level', 'Senior Level', 'Lead', 'Executive'],
     default: 'Mid Level'
   },
+  experience: {
+    minYears: {
+      type: Number,
+      required: true,
+      min: [0, "Minimum experience cannot be negative"]
+    },
+    maxYears: {
+      type: Number,
+      required: true,
+      min: [0, "Maximum experience cannot be negative"],
+      validate: {
+        validator: function (value) {
+          return value >= this.experience.minYears;
+        },
+        message: "Maximum experience must be greater than or equal to minimum experience"
+      }
+    }
+  },
   salary: {
     min: Number,
     max: Number,
@@ -44,10 +62,6 @@ const jobSchema = new mongoose.Schema({
     type: String,
     trim: true
   }],
-  requirements: [{
-    type: String,
-    trim: true
-  }],
   responsibilities: [{
     type: String,
     trim: true
@@ -56,31 +70,16 @@ const jobSchema = new mongoose.Schema({
     type: String,
     trim: true
   }],
-  remote: {
-    type: Boolean,
-    default: false
-  },
   status: {
     type: String,
-    enum: ['active', 'closed', 'draft'],
+    enum: ['active', 'closed','hired'],
     default: 'active'
   },
   applicationsCount: {
     type: Number,
     default: 0
   },
-  viewsCount: {
-    type: Number,
-    default: 0
-  },
   postedDate: {
-    type: Date,
-    default: Date.now
-  },
-  deadline: {
-    type: Date
-  },
-  createdAt: {
     type: Date,
     default: Date.now
   },
