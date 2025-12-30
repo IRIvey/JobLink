@@ -27,11 +27,6 @@ const jobSchema = new mongoose.Schema({
     enum: ['Full-time', 'Part-time', 'Contract', 'Internship', 'Freelance'],
     default: 'Full-time'
   },
-  experienceLevel: {
-    type: String,
-    enum: ['Entry Level', 'Mid Level', 'Senior Level', 'Lead', 'Executive'],
-    default: 'Mid Level'
-  },
   experience: {
     minYears: {
       type: Number,
