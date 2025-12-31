@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -11,7 +10,8 @@ import {
   Home,
   Bookmark,
   Settings,
-  MessageSquare
+  MessageSquare,
+  Users
 } from 'lucide-react';
 
 import JobSeekerProfile from './JobSeekerProfile'; 
@@ -19,6 +19,7 @@ import JobSearch from './JobSearch';
 import Applications from './Applications';  
 import SavedJobs from './SavedJobs';    
 import JobRecommendations from './JobRecommendations';
+import Friends from './Friends';
 
 const JobSeekerDashboard = () => {
   const navigate = useNavigate();
@@ -71,6 +72,7 @@ const JobSeekerDashboard = () => {
     { id: 'search', label: 'Search Jobs', icon: Search },
     { id: 'applications', label: 'My Applications', icon: Briefcase },
     { id: 'saved', label: 'Saved Jobs', icon: Bookmark },
+    { id: 'friends', label: 'Friends', icon: Users },
     { id: 'resume', label: 'My Resume', icon: FileText, isExternal: true },
     { id: 'profile', label: 'Profile', icon: User },
   ];
@@ -85,6 +87,8 @@ const JobSeekerDashboard = () => {
         return <Applications userData={userData} />;
       case 'saved':
         return <SavedJobs userData={userData} />;
+      case 'friends':
+        return <Friends userData={userData} />;
       case 'profile':
         return <JobSeekerProfile userData={userData} onUpdate={fetchUserData} />;
       default:

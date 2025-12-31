@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
-
 const jobSeekerSchema = new mongoose.Schema({
   email: {
     type: String,
@@ -25,6 +24,8 @@ const jobSeekerSchema = new mongoose.Schema({
   phone: String,
   location: String,
   bio: String,
+  profilePhoto: String, // Base64 encoded image
+  coverPhoto: String, // Base64 encoded image
   skills: [String],
   experience: [{
     title: String,
@@ -63,7 +64,9 @@ const jobSeekerSchema = new mongoose.Schema({
       linkedin: String,
       github: String,
       website: String,
-      summary: String
+      summary: String,
+      profilePhoto: String, // Photo will be stored here too for resume
+      coverPhoto: String // Cover photo for resume
     },
     experience: [{
       id: String,
@@ -131,4 +134,3 @@ jobSeekerSchema.pre("save", async function () {
 });
 
 export default mongoose.models.JobSeeker || mongoose.model("JobSeeker", jobSeekerSchema);
-

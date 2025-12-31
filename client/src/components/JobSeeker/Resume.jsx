@@ -11,79 +11,24 @@ import {
 
 const API_BASE_URL = 'http://localhost:5001/api';
 
-// Pre-filled user data based on Zannatul Adon Sabiha
-const INITIAL_DATA = {
+// Empty initial data structure
+const EMPTY_DATA = {
   personalInfo: {
-    fullName: 'Zannatul Adon Sabiha',
-    email: 'zannatuladonsabiha@gmail.com',
-    phone: '+880 1234-567890',
-    location: 'Dhaka, Bangladesh',
-    linkedin: 'https://www.linkedin.com/in/zannatul-sabiha-0bb69a318/',
-    github: 'https://github.com/yourusername',
+    fullName: '',
+    email: '',
+    phone: '',
+    location: '',
+    linkedin: '',
+    github: '',
     website: '',
-    summary: 'I am a motivated and detail-oriented 3rd-year Software Engineering student with solid programming skills in C, C++, Java, JavaScript, Python, and SQL. My experience spans developing web and mobile applications using frameworks like React, Flutter, and Spring Boot. I am passionate about creating efficient, user-friendly software and continuously learning new technologies while demonstrating strong problem-solving abilities and teamwork.'
+    summary: ''
   },
-  experience: [
-    {
-      id: '1',
-      company: 'Tech Solutions Ltd',
-      position: 'Software Engineering Intern',
-      location: 'Dhaka, Bangladesh',
-      startDate: '2024-06',
-      endDate: '2024-09',
-      current: false,
-      description: 'Developed and maintained web applications using React and Node.js. Collaborated with senior developers on database optimization and API development.'
-    }
-  ],
-  education: [
-    {
-      id: '1',
-      institution: 'Islamic University of Technology',
-      degree: 'BS in Software Engineering',
-      field: 'Software Engineering',
-      location: 'Dhaka, Bangladesh',
-      startDate: '2023-09',
-      endDate: '2027-09',
-      gpa: '',
-      description: ''
-    }
-  ],
-  skills: [
-    'Gmail', 'GitHub', 'C/C++', 'Java', 'JavaScript', 'Python', 'SQL', 
-    'React', 'Flutter', 'SpringBoot', 'Objective-C', 'C#', 'Node.js', 
-    'Swing', 'MongoDB', 'PostgreSQL', 'OOP', 'HRMS', 'Payroll', 
-    'REST', 'Django', 'Oracle Database'
-  ],
-  projects: [
-    {
-      id: '1',
-      name: 'Hotel Management System',
-      description: 'Developed a full-stack hotel management system for booking, billing, and room management. Implemented dynamic front-end using React and server-side APIs using Node.js. Used Oracle database to store and manage customer, reservation, and room data efficiently.',
-      technologies: 'React, Node.js, Oracle Database, Express',
-      link: 'https://github.com/ZAsabiha/dbms-2projecthms',
-      startDate: '2024-01',
-      endDate: '2024-05'
-    },
-    {
-      id: '2',
-      name: 'Dino Run Game',
-      description: 'A simple game demonstrating core programming concepts in C++. Developed a Dino Run game using C++ with 5 built-in library functions and no external libraries.',
-      technologies: 'C++, Game Development',
-      link: '',
-      startDate: '2023-09',
-      endDate: '2023-12'
-    }
-  ],
-  languages: [
-    { name: 'C++', proficiency: 'Proficient' },
-    { name: 'Java', proficiency: 'Proficient' },
-    { name: 'C', proficiency: 'Proficient' },
-    { name: 'JavaScript', proficiency: 'Proficient' },
-    { name: 'SQL', proficiency: 'Proficient' },
-    { name: 'Objective-C', proficiency: 'Intermediate' }
-  ],
-  certifications: [],
-  interests: ['Software Development', 'Web Technologies', 'Mobile Development', 'Problem Solving']
+  experience: [],
+  education: [],
+  skills: [],
+  projects: [],
+  languages: [],
+  certifications: []
 };
 
 // Template definitions
@@ -127,10 +72,10 @@ const ResumeBuilder = () => {
   const [activeTab, setActiveTab] = useState('edit');
   const [activeSection, setActiveSection] = useState('preview');
   const [selectedTemplate, setSelectedTemplate] = useState('modern');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-  const [resumeData, setResumeData] = useState(INITIAL_DATA);
+  const [resumeData, setResumeData] = useState(EMPTY_DATA);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   
   // Section order for drag and drop
@@ -141,12 +86,85 @@ const ResumeBuilder = () => {
     'skills',
     'projects',
     'languages',
-    'interests'
+    
   ]);
 
   const [editingExperience, setEditingExperience] = useState(null);
   const [editingEducation, setEditingEducation] = useState(null);
   const [editingProject, setEditingProject] = useState(null);
+
+  // Fetch resume data on component mount
+  useEffect(() => {
+    fetchResumeData();
+  }, []);
+
+  const fetchResumeData = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_BASE_URL}/resume`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        // If 404, it means no resume exists yet, use empty data
+        if (response.status === 404) {
+          console.log('No resume found, starting with empty data');
+          showMessage('info', 'No existing resume found. Start creating one!');
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // The backend returns { resume: {...} }
+      if (data.resume) {
+        setResumeData(data.resume);
+        showMessage('success', 'Resume loaded successfully!');
+      }
+      
+    } catch (error) {
+      console.error('Error fetching resume:', error);
+      showMessage('error', 'Failed to load resume data. Starting with empty resume.');
+      // Keep empty data if fetch fails
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveResumeToBackend = async () => {
+    try {
+      setSaving(true);
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_BASE_URL}/resume`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ resumeData })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      showMessage('success', 'Resume saved successfully!');
+    } catch (error) {
+      console.error('Error saving resume:', error);
+      showMessage('error', 'Failed to save resume');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const showMessage = (type, text) => {
     setMessage({ type, text });
@@ -301,20 +319,78 @@ const ResumeBuilder = () => {
     showMessage('success', 'Skill removed successfully!');
   };
 
-  const handleDownloadResume = () => {
-    const dataStr = JSON.stringify(resumeData, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
+const handleDownloadResume = async () => {
+  try {
+    console.log('Starting PDF download...');
+    showMessage('info', 'Generating PDF...');
+
+    const token = localStorage.getItem('token');
+    console.log('Token exists:', !!token);
+
+    // Get the selected template colors - fix the variable name issue
+    const currentTemplate = TEMPLATES[selectedTemplate] || TEMPLATES.modern;
+    const templateColor = currentTemplate.primaryColor;
+
+    console.log('Selected template:', selectedTemplate);
+    console.log('Template color:', templateColor);
+
+    // Make API call to backend with template color
+    const response = await fetch(`/api/resume/export?color=${encodeURIComponent(templateColor)}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    console.log('Response status:', response.status);
+    console.log('Content-Type:', response.headers.get('Content-Type'));
+
+    if (!response.ok) {
+      const contentType = response.headers.get('Content-Type');
+      if (contentType && contentType.includes('application/json')) {
+        const errorData = await response.json();
+        console.error('Server error:', errorData);
+        throw new Error(errorData.message || 'Failed to generate PDF');
+      } else {
+        const errorText = await response.text();
+        console.error('Server error (text):', errorText);
+        throw new Error(`Server error: ${response.status} ${response.statusText}`);
+      }
+    }
+
+    // Get the PDF blob from response
+    console.log('Getting blob from response...');
+    const blob = await response.blob();
+    console.log('Blob size:', blob.size, 'bytes');
+    console.log('Blob type:', blob.type);
+
+    if (blob.size === 0) {
+      throw new Error('PDF file is empty');
+    }
+
+    // Create download link
+    console.log('Creating download link...');
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `resume_${resumeData.personalInfo.fullName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `resume_${resumeData.personalInfo?.fullName?.replace(/\s+/g, '_') || 'user'}_${new Date().toISOString().split('T')[0]}.pdf`;
     document.body.appendChild(a);
+    console.log('Triggering download...');
     a.click();
+    
+    // Cleanup
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
-    showMessage('success', 'Resume exported successfully!');
-  };
-
+    
+    console.log('Download completed successfully');
+    showMessage('success', 'Resume downloaded successfully!');
+  } catch (error) {
+    console.error('!!! Error downloading resume !!!');
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    showMessage('error', `Failed to download resume: ${error.message}`);
+  }
+};
   const onDragEnd = (result) => {
     if (!result.destination) return;
     
@@ -335,9 +411,20 @@ const ResumeBuilder = () => {
     { id: 'education', label: 'Education', icon: GraduationCap },
     { id: 'skills', label: 'Skills', icon: Code },
     { id: 'projects', label: 'Projects', icon: FileText },
-    { id: 'languages', label: 'Languages', icon: Languages },
-    { id: 'interests', label: 'Interests', icon: Star }
+    { id: 'languages', label: 'Languages', icon: Languages }
   ];
+
+  // Show loading spinner while fetching data
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="animate-spin text-blue-600 mx-auto mb-4" size={48} />
+          <p className="text-gray-600 text-lg font-medium">Loading your resume...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Resume Preview Component
   const ResumePreview = () => {
@@ -481,7 +568,7 @@ const ResumeBuilder = () => {
               <div className="grid grid-cols-2 gap-4">
                 {resumeData.languages.map((lang, index) => (
                   <div key={index} className="flex justify-between items-center">
-                    <span className="font-medium text-gray-900">{lang.name}</span>
+                    <span className="font-medium text-gray-900">{lang.language}</span>
                     <span className="text-sm px-3 py-1 rounded-full" 
                           style={{ backgroundColor: `${template.accentColor}30`, color: template.primaryColor }}>
                       {lang.proficiency}
@@ -492,26 +579,7 @@ const ResumeBuilder = () => {
             </div>
           );
 
-        case 'interests':
-          return resumeData.interests.length > 0 && (
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold mb-4 pb-2 border-b-2" 
-                  style={{ color: template.primaryColor, borderColor: template.accentColor }}>
-                INTERESTS
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {resumeData.interests.map((interest, index) => (
-                  <span 
-                    key={index} 
-                    className="px-4 py-2 rounded-lg text-sm font-medium"
-                    style={{ backgroundColor: `${template.accentColor}20`, color: template.primaryColor }}
-                  >
-                    {interest}
-                  </span>
-                ))}
-              </div>
-            </div>
-          );
+   
 
         default:
           return null;
@@ -604,6 +672,8 @@ const ResumeBuilder = () => {
         <div className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-xl shadow-2xl border-2 transform transition-all duration-300 ${
           message.type === 'success' 
             ? 'bg-emerald-500 border-emerald-600' 
+            : message.type === 'info'
+            ? 'bg-blue-500 border-blue-600'
             : 'bg-red-500 border-red-600'
         } text-white font-medium`}>
           <div className="flex items-center gap-3">
@@ -656,6 +726,23 @@ const ResumeBuilder = () => {
               >
                 <Palette size={18} className="inline mr-2" />
                 Design
+              </button>
+              <button
+                onClick={saveResumeToBackend}
+                disabled={saving}
+                className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-medium shadow-lg shadow-green-200 hover:shadow-xl transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? (
+                  <>
+                    <Loader className="animate-spin" size={18} />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save size={18} />
+                    Save to DB
+                  </>
+                )}
               </button>
               <button
                 onClick={handleDownloadResume}
@@ -835,15 +922,6 @@ const ResumeBuilder = () => {
                     placeholder="Write a brief summary about your professional background and career goals..."
                   />
                 </div>
-              </div>
-              <div className="mt-8 flex justify-end">
-                <button
-                  onClick={() => showMessage('success', 'Personal information updated!')}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
-                >
-                  <Save size={20} />
-                  Save Changes
-                </button>
               </div>
             </div>
           )}
@@ -1357,7 +1435,7 @@ const ResumeBuilder = () => {
               <div className="grid grid-cols-2 gap-4">
                 {resumeData.languages.map((lang, index) => (
                   <div key={index} className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
-                    <span className="font-bold text-gray-900">{lang.name}</span>
+                    <span className="font-bold text-gray-900">{lang.language}</span>
                     <span className="text-sm px-4 py-2 rounded-full bg-white border-2 border-blue-300 text-blue-700 font-semibold">
                       {lang.proficiency}
                     </span>
@@ -1374,7 +1452,7 @@ const ResumeBuilder = () => {
                 Interests & Passions
               </h2>
               <div className="flex flex-wrap gap-3">
-                {resumeData.interests.map((interest, index) => (
+                {resumeData.interests && resumeData.interests.map((interest, index) => (
                   <span 
                     key={index} 
                     className="px-6 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 text-purple-700"

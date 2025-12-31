@@ -1,6 +1,6 @@
 import Company from "../models/Company.js";
 import bcrypt from "bcryptjs";
-import { upload } from "../middlewares/upload.js";
+import { upload } from "../middleware/upload.js";
 
 export const getCompanyProfile = async (req, res) => {
   try {

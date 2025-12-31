@@ -1,26 +1,37 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Briefcase, 
-  FileText, 
-  Home, 
-  User, 
-  Bell, 
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Briefcase,
+  FileText,
+  Home,
+  User,
+  Bell,
   LogOut,
   Plus,
   CheckCircle,
-  Search
-} from 'lucide-react';
+  Search,
+  TrendingUp,
+} from "lucide-react";
 
-import CompanyProfile from './CompanyProfilePage';
+// ✅ Import your pages
+import DashboardHome from "./DashboardHome";
+import PostJob from "./PostJob";
+import ManageJobs from "./ManageJobs";
+import Applicants from "./Applicants";
+import Analytics from "./Analytics";
+import CompanyProfilePage from "./CompanyProfilePage";
 
 const CompanyDashboard = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('home');
+
+  const [activeTab, setActiveTab] = useState("home");
   const [companyData, setCompanyData] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
   const [notifications, setNotifications] = useState([]);
+
+  // for top search bar (optional - you can pass to pages if needed later)
+  const [globalSearch, setGlobalSearch] = useState("");
 
   useEffect(() => {
     fetchCompanyData();
@@ -31,9 +42,9 @@ const CompanyDashboard = () => {
 
   const fetchCompanyData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5001/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` }
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5001/api/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (res.ok) setCompanyData(data.user);
@@ -44,111 +55,118 @@ const CompanyDashboard = () => {
 
   const fetchJobs = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5001/api/jobs', {
-        headers: { Authorization: `Bearer ${token}` }
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5001/api/jobs", {
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (res.ok) setJobs(data.jobs || []);
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const fetchApplications = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5001/api/applications', {
-        headers: { Authorization: `Bearer ${token}` }
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5001/api/applications", {
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (res.ok) setApplications(data.applications || []);
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const fetchNotifications = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5001/api/notifications', {
-        headers: { Authorization: `Bearer ${token}` }
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5001/api/notifications", {
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (res.ok) setNotifications(data.notifications || []);
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userType');
-    window.location.href = '/';
+    localStorage.removeItem("token");
+    localStorage.removeItem("userType");
+    window.location.href = "/";
   };
 
+  // ✅ LEFT SIDEBAR NAV
   const navigation = [
-    { id: 'home', label: 'Dashboard', icon: Home },
-    { id: 'post-job', label: 'Post Job', icon: Plus },
-    { id: 'jobs', label: 'Job Postings', icon: Briefcase },
-    { id: 'applications', label: 'Applications', icon: FileText },
-    { id: 'profile', label: 'Profile', icon: User },
+    { id: "home", label: "Dashboard", icon: Home },
+    { id: "post-job", label: "Post Job", icon: Plus },
+    { id: "jobs", label: "Job Postings", icon: Briefcase },
+    { id: "applications", label: "Applications", icon: FileText },
+    { id: "analytics", label: "Analytics", icon: TrendingUp },
+    { id: "profile", label: "Profile", icon: User },
   ];
 
+  // ✅ Handlers you may need across pages
+  const handleStatusChange = (appId, newStatus) => {
+    setApplications((prev) =>
+      prev.map((app) => (app.id === appId ? { ...app, status: newStatus } : app))
+    );
+  };
+
+  // ✅ MAIN CONTENT SWITCH (calls modular pages)
   const renderContent = () => {
     switch (activeTab) {
-      case 'jobs':
+      case "post-job":
         return (
-          <div className="space-y-4">
-            <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg">
-              <Plus size={16} /> Post New Job
-            </button>
-            {jobs.map(job => (
-              <div key={job.id} className="bg-white p-4 rounded-xl shadow-sm flex justify-between">
-                <span className="font-medium">{job.title}</span>
-                <span className="text-sm text-green-600">{job.status}</span>
-              </div>
-            ))}
-          </div>
+          <PostJob
+            // optional: after posting job you can refresh
+            onJobPosted={() => {
+              fetchJobs();
+              setActiveTab("jobs");
+            }}
+          />
         );
-      case 'applications':
+
+      case "jobs":
         return (
-          <div className="space-y-4">
-            {applications.map(app => (
-              <div key={app.id} className="bg-white p-4 rounded-xl shadow-sm">
-                <p className="font-medium">{app.name}</p>
-                <p className="text-sm text-gray-500">{app.job}</p>
-              </div>
-            ))}
-          </div>
+          <ManageJobs
+            jobs={jobs}
+            setJobs={setJobs}
+            // optional: you can open post job tab from ManageJobs button
+            onClickPostNewJob={() => setActiveTab("post-job")}
+          />
         );
-      case 'profile':
-        return <CompanyProfile companyData={companyData} />;
+
+      case "applications":
+        return (
+          <Applicants
+            applications={applications}
+            handleStatusChange={handleStatusChange}
+          />
+        );
+
+      case "analytics":
+        return <Analytics jobs={jobs} applications={applications} />;
+
+      case "profile":
+        return (
+          <CompanyProfilePage
+            companyData={companyData}
+            setCompanyData={setCompanyData}
+          />
+        );
+
       default:
-        return (
-          <div className="space-y-6">
-            {/* Job Posts Section */}
-            {jobs.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-semibold mb-4">Your Job Posts</h2>
-                {jobs.slice(0, 5).map(job => (
-                  <div key={job.id} className="flex justify-between py-3 border-b last:border-none">
-                    <span className="font-medium">{job.title}</span>
-                    <span className="text-sm text-green-600">{job.status}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            {/* Applications Section */}
-            {applications.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-semibold mb-4">Recent Applications</h2>
-                {applications.slice(0, 5).map(app => (
-                  <div key={app.id} className="py-3 border-b last:border-none">
-                    <p className="font-medium">{app.name}</p>
-                    <p className="text-sm text-gray-500">{app.job}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        );
+        return <DashboardHome jobs={jobs} applications={applications} />;
     }
   };
+
+  const hasUnread = useMemo(
+    () => notifications.some((n) => !n.read),
+    [notifications]
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -160,27 +178,35 @@ const CompanyDashboard = () => {
               <Briefcase className="text-indigo-600" size={32} />
               <span className="text-2xl font-bold text-gray-900">JobLink</span>
             </div>
+
+            {/* ✅ Keep Search bar as is */}
             <div className="flex-1 max-w-2xl mx-8">
-              {/* Search Bar */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                <Search
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  size={20}
+                />
                 <input
                   type="text"
                   placeholder="Search jobs, companies, skills..."
+                  value={globalSearch}
+                  onChange={(e) => setGlobalSearch(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
               </div>
             </div>
+
             <div className="flex items-center gap-4">
               <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
                 <Bell size={24} />
-                {notifications.some(n => !n.read) && (
+                {hasUnread && (
                   <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                 )}
               </button>
+
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
-                  {companyData?.email?.[0]?.toUpperCase() || 'C'}
+                  {companyData?.email?.[0]?.toUpperCase() || "C"}
                 </div>
                 <button
                   onClick={handleLogout}
@@ -196,11 +222,13 @@ const CompanyDashboard = () => {
       </nav>
 
       {/* Layout */}
-      <div className="max-w-7xl mx-auto px-6 pt-24 flex gap-6">
-        {/* Left Sidebar */}
-        <aside className="w-64 flex-shrink-0">
+      <div className="max-w-screen-2xl mx-auto px-6 pt-24 flex gap-4">
+
+        {/* ✅ Left Sidebar (calls pages) */}
+       <aside className="w-52 flex-shrink-0">
+
           <div className="bg-white rounded-xl shadow-sm p-4 space-y-1 sticky top-24">
-            {navigation.map(item => {
+            {navigation.map((item) => {
               const Icon = item.icon;
               return (
                 <button
@@ -208,8 +236,8 @@ const CompanyDashboard = () => {
                   onClick={() => setActiveTab(item.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     activeTab === item.id
-                      ? 'bg-indigo-50 text-indigo-600'
-                      : 'text-gray-700 hover:bg-gray-50'
+                      ? "bg-indigo-50 text-indigo-600"
+                      : "text-gray-700 hover:bg-gray-50"
                   }`}
                 >
                   <Icon size={18} />
@@ -222,44 +250,50 @@ const CompanyDashboard = () => {
 
         {/* Main Content */}
         <main className="flex-1 space-y-6">
-          {/* Quick Stats below Search Bar - only on home/dashboard */}
-          {activeTab === 'home' && (
+          {/* ✅ Quick Stats only in home */}
+          {activeTab === "home" && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
-              <StatBox 
-                icon={Briefcase} 
-                label="Total Jobs" 
-                value={jobs.length} 
-                color="bg-indigo-100" 
+              <StatBox
+                icon={Briefcase}
+                label="Total Jobs Posted"
+                value={jobs.length}
+                color="bg-indigo-100"
                 textColor="text-indigo-600"
               />
-              <StatBox 
-                icon={FileText} 
-                label="Applications" 
-                value={applications.length} 
-                color="bg-green-100" 
+              <StatBox
+                icon={FileText}
+                label="Applications"
+                value={applications.length}
+                color="bg-green-100"
                 textColor="text-green-600"
               />
-              <StatBox 
-                icon={CheckCircle} 
-                label="Active Jobs" 
-                value={jobs.filter(j => j.status==='Active').length} 
-                color="bg-purple-100" 
+              <StatBox
+                icon={CheckCircle}
+                label="Total Hired"
+                value={jobs.filter((j) => j.status === "Hired").length}
+                color="bg-purple-100"
                 textColor="text-purple-600"
               />
             </div>
           )}
+
           {renderContent()}
         </main>
 
-        {/* Right Sidebar */}
-        <aside className="w-80 flex-shrink-0">
+        {/* ✅ Right Sidebar (keep as it is) */}
+      <aside className="w-64 flex-shrink-0">
+
           <div className="space-y-4 sticky top-24">
-            {/* Profile Strength */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Profile Strength</h3>
+              <h3 className="font-semibold text-gray-900 mb-4">
+                Profile Strength
+              </h3>
               <div className="mb-3">
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-indigo-600 h-2 rounded-full" style={{ width: '60%' }}></div>
+                  <div
+                    className="bg-indigo-600 h-2 rounded-full"
+                    style={{ width: "60%" }}
+                  ></div>
                 </div>
                 <p className="text-sm text-gray-600 mt-2">60% Complete</p>
               </div>
@@ -285,11 +319,11 @@ const CompanyDashboard = () => {
   );
 };
 
-// Stat Box Component
+// ✅ Stat Box (same as yours)
 const StatBox = ({ icon: Icon, label, value, color, textColor }) => (
   <div className="bg-white rounded-xl shadow-sm p-5 flex items-center gap-4">
     <div className={`${color} p-3 rounded-lg`}>
-      <Icon className={textColor} size={22}/>
+      <Icon className={textColor} size={22} />
     </div>
     <div>
       <p className="text-sm text-gray-500">{label}</p>

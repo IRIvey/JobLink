@@ -25,14 +25,15 @@ const router = express.Router();
 // All routes require authentication
 router.use(protect);
 
+// IMPORTANT: Specific routes MUST come before parameterized routes
+// Export resume - must be before any :id routes
+router.get('/export', exportResume);
+
 // Get full resume
 router.get('/', getResume);
 
 // Update entire resume
 router.put('/', updateResume);
-
-// Export resume
-router.get('/export', exportResume);
 
 // Personal Information
 router.put('/personal-info', updatePersonalInfo);
