@@ -21,15 +21,18 @@ const EMPTY_DATA = {
     linkedin: '',
     github: '',
     website: '',
-    summary: ''
+    summary: '',
+    profilePhoto: '',   // ✅ added
+    coverPhoto: ''      // ✅ added (optional)
   },
   experience: [],
   education: [],
   skills: [],
   projects: [],
   languages: [],
-  certifications: []
+  certifications: [] // already here ✅
 };
+
 
 // Template definitions
 const TEMPLATES = {
@@ -66,6 +69,13 @@ const TEMPLATES = {
     fontFamily: '"Outfit", system-ui, sans-serif'
   }
 };
+const fileToBase64 = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
 const ResumeBuilder = () => {
   const navigate = useNavigate();
@@ -79,15 +89,16 @@ const ResumeBuilder = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   
   // Section order for drag and drop
-  const [sectionOrder, setSectionOrder] = useState([
-    'summary',
-    'experience',
-    'education',
-    'skills',
-    'projects',
-    'languages',
-    
-  ]);
+const [sectionOrder, setSectionOrder] = useState([
+  'summary',
+  'experience',
+  'education',
+  'skills',
+  'projects',
+  'languages',
+  'certifications', // ✅ add this
+]);
+
 
   const [editingExperience, setEditingExperience] = useState(null);
   const [editingEducation, setEditingEducation] = useState(null);
@@ -335,12 +346,16 @@ const handleDownloadResume = async () => {
     console.log('Template color:', templateColor);
 
     // Make API call to backend with template color
-    const response = await fetch(`/api/resume/export?color=${encodeURIComponent(templateColor)}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+ const response = await fetch(
+  `${API_BASE_URL}/resume/export?color=${encodeURIComponent(templateColor)}`,
+  {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+);
+
 
     console.log('Response status:', response.status);
     console.log('Content-Type:', response.headers.get('Content-Type'));
@@ -497,6 +512,43 @@ const handleDownloadResume = async () => {
               </div>
             </div>
           );
+case 'certifications':
+  return resumeData.certifications.length > 0 && (
+    <div className="mb-8">
+      <h2
+        className="text-2xl font-bold mb-4 pb-2 border-b-2"
+        style={{ color: template.primaryColor, borderColor: template.accentColor }}
+      >
+        CERTIFICATIONS
+      </h2>
+
+      <div className="space-y-3">
+        {resumeData.certifications.map((cert) => (
+          <div key={cert.id || cert.name} className="flex justify-between gap-4">
+            <div>
+              <p className="font-semibold text-gray-900">{cert.name}</p>
+              <p className="text-sm text-gray-600">
+                {cert.issuer}{cert.date ? ` • ${cert.date}` : ''}
+              </p>
+
+              {cert.url && (
+                <a
+                  href={cert.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium flex items-center gap-1 hover:underline"
+                  style={{ color: template.primaryColor }}
+                >
+                  <ExternalLink size={14} />
+                  Credential
+                </a>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
         case 'skills':
           return resumeData.skills.length > 0 && (
@@ -591,6 +643,79 @@ const handleDownloadResume = async () => {
            style={{ fontFamily: template.fontFamily }}>
         {/* Header */}
         <div className="text-center pb-8 mb-8 border-b-4" style={{ borderColor: template.primaryColor }}>
+
+          <div className="col-span-2 grid grid-cols-2 gap-6">
+  {/* Profile Photo */}
+  <div>
+    <label className="block text-sm font-bold text-gray-700 mb-2">Profile Photo</label>
+
+    {resumeData.personalInfo.profilePhoto && (
+      <img
+        src={resumeData.personalInfo.profilePhoto}
+        alt="Profile"
+        className="w-24 h-24 rounded-full object-cover border-2 border-gray-300 mb-3"
+      />
+    )}
+
+    <input
+      type="file"
+      accept="image/*"
+      onChange={async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const base64 = await fileToBase64(file);
+        handlePersonalInfoChange('profilePhoto', base64);
+      }}
+      className="w-full"
+    />
+
+    {resumeData.personalInfo.profilePhoto && (
+      <button
+        type="button"
+        onClick={() => handlePersonalInfoChange('profilePhoto', '')}
+        className="mt-2 text-sm text-red-600 hover:underline"
+      >
+        Remove Photo
+      </button>
+    )}
+  </div>
+
+  {/* Cover Photo (optional) */}
+  <div>
+    <label className="block text-sm font-bold text-gray-700 mb-2">Cover Photo (Optional)</label>
+
+    {resumeData.personalInfo.coverPhoto && (
+      <img
+        src={resumeData.personalInfo.coverPhoto}
+        alt="Cover"
+        className="w-full h-24 rounded-xl object-cover border-2 border-gray-300 mb-3"
+      />
+    )}
+
+    <input
+      type="file"
+      accept="image/*"
+      onChange={async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const base64 = await fileToBase64(file);
+        handlePersonalInfoChange('coverPhoto', base64);
+      }}
+      className="w-full"
+    />
+
+    {resumeData.personalInfo.coverPhoto && (
+      <button
+        type="button"
+        onClick={() => handlePersonalInfoChange('coverPhoto', '')}
+        className="mt-2 text-sm text-red-600 hover:underline"
+      >
+        Remove Cover
+      </button>
+    )}
+  </div>
+</div>
+
           <h1 className="text-5xl font-bold mb-4" style={{ color: template.primaryColor }}>
             {resumeData.personalInfo.fullName.toUpperCase()}
           </h1>
@@ -698,7 +823,7 @@ const handleDownloadResume = async () => {
               <div className="h-8 w-px bg-gray-300"></div>
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  Resume Builder Pro
+                  Resume Builder 
                 </h1>
                 <p className="text-sm text-gray-600">Create your perfect resume in minutes</p>
               </div>
@@ -749,7 +874,7 @@ const handleDownloadResume = async () => {
                 className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-lg font-medium shadow-lg shadow-emerald-200 hover:shadow-xl transition-all flex items-center gap-2"
               >
                 <Download size={18} />
-                Export
+                Download
               </button>
             </div>
           </div>
@@ -1076,6 +1201,100 @@ const handleDownloadResume = async () => {
               )}
             </div>
           )}
+          {activeTab === 'edit' && activeSection === 'certifications' && (
+  <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
+    <h2 className="text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+      <Award className="text-blue-600" size={32} />
+      Certifications
+    </h2>
+
+    {/* Add certification */}
+    <div className="grid grid-cols-2 gap-4 mb-6">
+      <input
+        type="text"
+        placeholder="Certification name"
+        className="px-4 py-3 border-2 border-gray-300 rounded-xl"
+        id="certName"
+      />
+      <input
+        type="text"
+        placeholder="Issuer"
+        className="px-4 py-3 border-2 border-gray-300 rounded-xl"
+        id="certIssuer"
+      />
+      <input
+        type="month"
+        className="px-4 py-3 border-2 border-gray-300 rounded-xl"
+        id="certDate"
+      />
+      <input
+        type="url"
+        placeholder="Credential URL (optional)"
+        className="px-4 py-3 border-2 border-gray-300 rounded-xl"
+        id="certUrl"
+      />
+      <div className="col-span-2">
+        <button
+          onClick={() => {
+            const name = document.getElementById('certName').value.trim();
+            const issuer = document.getElementById('certIssuer').value.trim();
+            const date = document.getElementById('certDate').value;
+            const url = document.getElementById('certUrl').value.trim();
+
+            if (!name) return showMessage('error', 'Certification name is required');
+
+            const newCert = { id: Date.now().toString(), name, issuer, date, url };
+
+            setResumeData((prev) => ({
+              ...prev,
+              certifications: [...(prev.certifications || []), newCert],
+            }));
+
+            document.getElementById('certName').value = '';
+            document.getElementById('certIssuer').value = '';
+            document.getElementById('certDate').value = '';
+            document.getElementById('certUrl').value = '';
+            showMessage('success', 'Certification added!');
+          }}
+          className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+        >
+          <Plus size={20} />
+          Add Certification
+        </button>
+      </div>
+    </div>
+
+    {/* List certifications */}
+    <div className="space-y-3">
+      {(resumeData.certifications || []).map((cert) => (
+        <div key={cert.id} className="border-2 border-gray-200 rounded-xl p-4 flex justify-between items-start">
+          <div>
+            <p className="font-bold text-gray-900">{cert.name}</p>
+            <p className="text-sm text-gray-600">{cert.issuer}{cert.date ? ` • ${cert.date}` : ''}</p>
+            {cert.url && (
+              <a className="text-sm text-blue-600 hover:underline" href={cert.url} target="_blank" rel="noreferrer">
+                {cert.url}
+              </a>
+            )}
+          </div>
+
+          <button
+            onClick={() => {
+              setResumeData((prev) => ({
+                ...prev,
+                certifications: prev.certifications.filter((c) => c.id !== cert.id),
+              }));
+              showMessage('success', 'Certification removed!');
+            }}
+            className="p-2 text-red-600 hover:bg-red-50 rounded-xl"
+          >
+            <Trash2 size={20} />
+          </button>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
 
           {activeTab === 'edit' && activeSection === 'education' && (
             <div className="space-y-6">

@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Briefcase,
-  FileText,
-  Home,
-  User,
-  Bell,
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Briefcase, 
+  FileText, 
+  Home, 
+  User, 
+  Bell, 
   LogOut,
   Plus,
   CheckCircle,
@@ -222,11 +222,9 @@ const CompanyDashboard = () => {
       </nav>
 
       {/* Layout */}
-      <div className="max-w-screen-2xl mx-auto px-6 pt-24 flex gap-4">
-
-        {/* ✅ Left Sidebar (calls pages) */}
-       <aside className="w-52 flex-shrink-0">
-
+      <div className="max-w-7xl mx-auto px-6 pt-24 flex gap-6">
+        {/* Left Sidebar */}
+        <aside className="w-64 flex-shrink-0">
           <div className="bg-white rounded-xl shadow-sm p-4 space-y-1 sticky top-24">
             {navigation.map((item) => {
               const Icon = item.icon;
@@ -280,9 +278,8 @@ const CompanyDashboard = () => {
           {renderContent()}
         </main>
 
-        {/* ✅ Right Sidebar (keep as it is) */}
-      <aside className="w-64 flex-shrink-0">
-
+        {/* Right Sidebar */}
+        <aside className="w-80 flex-shrink-0">
           <div className="space-y-4 sticky top-24">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h3 className="font-semibold text-gray-900 mb-4">
@@ -333,3 +330,4 @@ const StatBox = ({ icon: Icon, label, value, color, textColor }) => (
 );
 
 export default CompanyDashboard;
+
