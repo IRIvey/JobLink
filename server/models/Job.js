@@ -114,27 +114,15 @@ const jobSchema = new mongoose.Schema({
     required: true
   },
 
-  experience: {
-    minYears: {
-      type: Number,
-      required: true,
-      min: [0, "Minimum experience cannot be negative"]
-    },
-    maxYears: {
-      type: Number,
-      required: true,
-      min: [0, "Maximum experience cannot be negative"],
-      validate: {
-        validator: function (value) {
-          const minY = this.experience?.minYears ?? 0;
-          return value >= minY;
-        },
-        message: "Maximum experience must be greater than or equal to minimum experience"
-      }
-    }
-  },
+experience: {
+  type: String,
+  required: true,
+  enum: {
+    values: ["entry", "mid", "senior", "lead"],
+    message: "{VALUE} is not a valid experience level"
+  }
+},
 
-  // ✅ FIXED: required is applied to the salary object correctly
   salary: {
     type: {
       min: { type: Number },
@@ -145,20 +133,6 @@ const jobSchema = new mongoose.Schema({
   },
 
   skills: [
-    {
-      type: String,
-      trim: true
-    }
-  ],
-
-  responsibilities: [
-    {
-      type: String,
-      trim: true
-    }
-  ],
-
-  benefits: [
     {
       type: String,
       trim: true

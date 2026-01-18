@@ -282,17 +282,34 @@ export const createJob = async (req, res) => {
       skills = skills.filter(skill => industrySkills.includes(skill));
     }
 
-    // 6. Create job
+    // Parse salary from frontend single input field
+    let salaryInput = req.body.salary; // e.g. "$80k - $120k"
+    let salary = { min: 0, max: 0, currency: "USD" };
+
+    if (salaryInput) {
+      const numbers = salaryInput
+        .replace(/\$/g, "")
+        .replace(/k/gi, "000")
+        .split("-")
+        .map(s => Number(s.trim()));
+
+      if (numbers.length === 1) {
+        salary.min = numbers[0];
+        salary.max = numbers[0];
+      } else if (numbers.length === 2) {
+        salary.min = numbers[0];
+        salary.max = numbers[1];
+      }
+    }
+  // 6. Create job
     const job = await Job.create({
       company: companyId,
       title: req.body.title,
       description: req.body.description,
-      location: req.body.location,
+      location: company.location,
       type: req.body.type,
       experience: req.body.experience,
-      salary: req.body.salary,
-      responsibilities: req.body.responsibilities,
-      benefits: req.body.benefits,
+      salary,
       skills,
       status: "active"
     });

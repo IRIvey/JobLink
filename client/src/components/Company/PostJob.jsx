@@ -1,4 +1,14 @@
 import React from "react";
+import Select from "react-select";
+
+const skillOptions = [
+  { value: "javascript", label: "JavaScript" },
+  { value: "react", label: "React" },
+  { value: "nodejs", label: "Node.js" },
+  { value: "mongodb", label: "MongoDB" },
+  { value: "typescript", label: "TypeScript" },
+  { value: "uiux", label: "UI/UX" },
+];
 
 const PostJob = () => {
   return (
@@ -7,7 +17,9 @@ const PostJob = () => {
 
       <form className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Job Title *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Job Title *
+          </label>
           <input
             type="text"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
@@ -15,18 +27,24 @@ const PostJob = () => {
           />
         </div>
 
+        {/* ⭐ Updated Block: Only Skills in left, Job Type in right */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Location *</label>
-            <input
-              type="text"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              placeholder="e.g. Remote, New York"
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Skills *
+            </label>
+            <Select
+              isMulti
+              options={skillOptions}
+              placeholder="Select skills..."
+              classNamePrefix="select"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Job Type *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Job Type *
+            </label>
             <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
               <option>Full-time</option>
               <option>Part-time</option>
@@ -39,7 +57,9 @@ const PostJob = () => {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Salary Range</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Salary Range
+            </label>
             <input
               type="text"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
@@ -48,7 +68,9 @@ const PostJob = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Experience Level</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Experience Level
+            </label>
             <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
               <option>Entry Level</option>
               <option>Mid Level</option>
@@ -59,7 +81,9 @@ const PostJob = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Job Description *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Job Description *
+          </label>
           <textarea
             rows="6"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
