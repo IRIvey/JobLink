@@ -1,6 +1,8 @@
 import Company from "../models/Company.js";
 import bcrypt from "bcryptjs";
 import { upload } from "../middleware/upload.js";
+import Job from "../models/Job.js";
+import { INDUSTRY_SKILLS } from "../models/Job.js";
 
 export const getCompanyProfile = async (req, res) => {
   try {
@@ -146,3 +148,96 @@ export const updateCompany = [
     }
   },
 ];
+
+
+export const createJob = async (req, res) => {
+  try {
+    // 1. Logged-in company ID (from protect middleware)
+    const companyId = req.user.id;
+
+    // 2. Fetch company
+    const company = await Company.findById(companyId);
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    // 3. Get industry
+    const industry = company.industry;
+
+    // 4. Get skillset based on industry
+    const industrySkills = INDUSTRY_SKILLS[industry] || INDUSTRY_SKILLS.Other;
+
+    // 5. Optional: allow frontend to send selected skills
+    let skills = req.body.skills;
+
+    // If skills not sent → assign default industry skills
+    if (!skills || skills.length === 0) {
+      skills = industrySkills;
+    } 
+    // If sent → validate skills against industry
+    else {
+      skills = skills.filter(skill => industrySkills.includes(skill));
+    }
+
+    // 6. Create job
+    const job = await Job.create({
+      company: companyId,
+      title: req.body.title,
+      description: req.body.description,
+      location: req.body.location,
+      type: req.body.type,
+      experience: req.body.experience,
+      salary: req.body.salary,
+      responsibilities: req.body.responsibilities,
+      benefits: req.body.benefits,
+      skills,
+      status: "active"
+    });
+
+    res.status(201).json({
+      success: true,
+      job
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to create job",
+      error: error.message
+    });
+  }
+};
+
+export const getJobSkillsForCompany = async (req, res) => {
+  try {
+    // company id from auth middleware
+    const companyId = req.companyId || req.user?.id;
+
+    const company = await Company.findById(companyId).select("industry");
+    if (!company) {
+      return res.status(404).json({
+        success: false,
+        message: "Company not found",
+      });
+    }
+
+    const industry = company.industry;
+
+    const skills =
+      INDUSTRY_SKILLS[industry] || INDUSTRY_SKILLS.Other;
+
+    res.status(200).json({
+      success: true,
+      industry,
+      skills,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch skills",
+      error: error.message,
+    });
+  }
+};
+
