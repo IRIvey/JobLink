@@ -664,117 +664,91 @@ case 'certifications':
     return (
       <div className="bg-white rounded-xl shadow-2xl p-12 max-w-5xl mx-auto" 
            style={{ fontFamily: template.fontFamily }}>
-        {/* Header */}
-        <div className="text-center pb-8 mb-8 border-b-4" style={{ borderColor: template.primaryColor }}>
-
-          <div className="col-span-2 grid grid-cols-2 gap-6">
-  {/* Profile Photo */}
-<div className="w-full flex justify-start">
-  <div className="flex flex-col items-start">
+        {/* Header - Photo and Name Side by Side */}
+<div className="pb-8 mb-8 border-b-4" style={{ borderColor: template.primaryColor }}>
+  <div className="flex items-start gap-8 mb-6">
+    {/* Profile Photo - Left Side */}
     {resumeData.personalInfo.profilePhoto && (
-      <img
-        src={resumeData.personalInfo.profilePhoto}
-        alt="Profile"
-        className="w-48 h-60 rounded-md object-cover border-2 border-gray-300 mb-3 shadow-sm"
-      />
+      <div className="flex-shrink-0">
+        <img
+          src={resumeData.personalInfo.profilePhoto}
+          alt="Profile"
+          className="w-32 h-32 rounded-full object-cover border-4 shadow-lg"
+          style={{ borderColor: template.primaryColor }}
+        />
+      </div>
     )}
-
-    <div className="flex flex-col items-start">
-      <input
-        type="file"
-        accept="image/*"
-        onChange={async (e) => {
-          const file = e.target.files?.[0];
-          if (!file) return;
-          const base64 = await fileToBase64(file);
-          handlePersonalInfoChange("profilePhoto", base64);
-        }}
-        className="text-sm text-gray-500 cursor-pointer"
-      />
-
-      {resumeData.personalInfo.profilePhoto && (
-        <button
-          type="button"
-          onClick={() => handlePersonalInfoChange("profilePhoto", "")}
-          className="mt-2 text-sm text-red-600 hover:underline"
-        >
-          Remove Photo
-        </button>
-      )}
+    
+    {/* Name and Title - Right Side */}
+    <div className="flex-1 text-left">
+      <h1 className="text-5xl font-bold mb-2" style={{ color: template.primaryColor }}>
+        {resumeData.personalInfo.fullName.toUpperCase()}
+      </h1>
+      <p className="text-xl font-semibold mb-4" style={{ color: template.accentColor }}>
+        Software Engineering Student
+      </p>
     </div>
   </div>
-</div>
-
-
-  {/* Cover Photo (optional) */}
   
+  {/* Contact Info - Centered Below */}
+  <div className="flex justify-center flex-wrap gap-6 text-sm text-gray-700">
+    {resumeData.personalInfo.email && (
+      <span className="flex items-center gap-2">
+        <Mail size={16} style={{ color: template.primaryColor }} /> 
+        {resumeData.personalInfo.email}
+      </span>
+    )}
+    {resumeData.personalInfo.phone && (
+      <span className="flex items-center gap-2">
+        <Phone size={16} style={{ color: template.primaryColor }} /> 
+        {resumeData.personalInfo.phone}
+      </span>
+    )}
+    {resumeData.personalInfo.location && (
+      <span className="flex items-center gap-2">
+        <MapPin size={16} style={{ color: template.primaryColor }} /> 
+        {resumeData.personalInfo.location}
+      </span>
+    )}
+  </div>
+  
+  {/* Social Links */}
+  <div className="flex justify-center gap-6 mt-4">
+    {resumeData.personalInfo.linkedin && (
+      <a 
+        href={resumeData.personalInfo.linkedin} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 hover:underline font-medium"
+        style={{ color: template.primaryColor }}
+      >
+        <Linkedin size={18} /> LinkedIn
+      </a>
+    )}
+    {resumeData.personalInfo.github && (
+      <a 
+        href={resumeData.personalInfo.github} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 hover:underline font-medium"
+        style={{ color: template.primaryColor }}
+      >
+        <Github size={18} /> GitHub
+      </a>
+    )}
+    {resumeData.personalInfo.website && (
+      <a 
+        href={resumeData.personalInfo.website} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 hover:underline font-medium"
+        style={{ color: template.primaryColor }}
+      >
+        <Globe size={18} /> Website
+      </a>
+    )}
+  </div>
 </div>
-
-          <h1 className="text-5xl font-bold mb-4" style={{ color: template.primaryColor }}>
-            {resumeData.personalInfo.fullName.toUpperCase()}
-          </h1>
-          <p className="text-xl font-semibold mb-4" style={{ color: template.accentColor }}>
-            Software Engineering Student
-          </p>
-          
-          <div className="flex justify-center flex-wrap gap-6 text-sm text-gray-700">
-            {resumeData.personalInfo.email && (
-              <span className="flex items-center gap-2">
-                <Mail size={16} style={{ color: template.primaryColor }} /> 
-                {resumeData.personalInfo.email}
-              </span>
-            )}
-            {resumeData.personalInfo.phone && (
-              <span className="flex items-center gap-2">
-                <Phone size={16} style={{ color: template.primaryColor }} /> 
-                {resumeData.personalInfo.phone}
-              </span>
-            )}
-            {resumeData.personalInfo.location && (
-              <span className="flex items-center gap-2">
-                <MapPin size={16} style={{ color: template.primaryColor }} /> 
-                {resumeData.personalInfo.location}
-              </span>
-            )}
-          </div>
-          
-          <div className="flex justify-center gap-6 mt-4">
-            {resumeData.personalInfo.linkedin && (
-              <a 
-                href={resumeData.personalInfo.linkedin} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 hover:underline font-medium"
-                style={{ color: template.primaryColor }}
-              >
-                <Linkedin size={18} /> LinkedIn
-              </a>
-            )}
-            {resumeData.personalInfo.github && (
-              <a 
-                href={resumeData.personalInfo.github} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 hover:underline font-medium"
-                style={{ color: template.primaryColor }}
-              >
-                <Github size={18} /> GitHub
-              </a>
-            )}
-            {resumeData.personalInfo.website && (
-              <a 
-                href={resumeData.personalInfo.website} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 hover:underline font-medium"
-                style={{ color: template.primaryColor }}
-              >
-                <Globe size={18} /> Website
-              </a>
-            )}
-          </div>
-        </div>
-
         {/* Dynamic Sections */}
         {sectionOrder.map(section => renderSection(section))}
       </div>
