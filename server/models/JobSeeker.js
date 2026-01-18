@@ -1,141 +1,3 @@
-// import mongoose from "mongoose";
-// import bcrypt from "bcryptjs";
-
-// const jobSeekerSchema = new mongoose.Schema({
-//   email: {
-//     type: String,
-//     required: true,
-//     unique: true,
-//     lowercase: true,
-//     trim: true,
-//   },
-//   password: {
-//     type: String,
-//     required: true,
-//     minlength: 6,
-//   },
-//   userType: {
-//     type: String,
-//     default: "jobseeker",
-//     immutable: true,
-//   },
-//   // Profile fields
-//   fullName: String,
-//   phone: String,
-//   location: String,
-//   bio: String,
-//   profilePhoto: String, // Base64 encoded image
-//   coverPhoto: String, // Base64 encoded image
-//   skills: [String],
-//   experience: [{
-//     title: String,
-//     company: String,
-//     location: String,
-//     startDate: Date,
-//     endDate: Date,
-//     current: Boolean,
-//     description: String
-//   }],
-//   education: [{
-//     degree: String,
-//     school: String,
-//     field: String,
-//     startDate: Date,
-//     endDate: Date,
-//     description: String
-//   }],
-//   certifications: [{
-//     name: String,
-//     issuer: String,
-//     date: Date,
-//     url: String
-//   }],
-//   savedJobs: [{
-//     type: mongoose.Schema.Types.ObjectId,
-//     ref: 'Job'
-//   }],
-//   // Resume fields
-//   resume: {
-//     personalInfo: {
-//       fullName: String,
-//       email: String,
-//       phone: String,
-//       location: String,
-//       linkedin: String,
-//       github: String,
-//       website: String,
-//       summary: String,
-//       profilePhoto: String, // Photo will be stored here too for resume
-//       coverPhoto: String // Cover photo for resume
-//     },
-//     experience: [{
-//       id: String,
-//       company: String,
-//       position: String,
-//       location: String,
-//       startDate: String,
-//       endDate: String,
-//       current: Boolean,
-//       description: String
-//     }],
-//     education: [{
-//       id: String,
-//       institution: String,
-//       degree: String,
-//       field: String,
-//       location: String,
-//       startDate: String,
-//       endDate: String,
-//       gpa: String,
-//       description: String
-//     }],
-//     skills: [String],
-//     certifications: [{
-//       id: String,
-//       name: String,
-//       issuer: String,
-//       date: String,
-//       expiryDate: String,
-//       credentialId: String,
-//       url: String
-//     }],
-//     projects: [{
-//       id: String,
-//       name: String,
-//       description: String,
-//       technologies: String,
-//       link: String,
-//       startDate: String,
-//       endDate: String
-//     }],
-//     languages: [{
-//       id: String,
-//       language: String,
-//       proficiency: String
-//     }]
-//   },
-//   createdAt: {
-//     type: Date,
-//     default: Date.now,
-//   },
-//   updatedAt: {
-//     type: Date,
-//     default: Date.now,
-//   }
-// });
-
-// jobSeekerSchema.pre("save", async function () {
-//   this.updatedAt = new Date();
-
-//   if (!this.isModified("password")) return;
-
-//   const salt = await bcrypt.genSalt(10);
-//   this.password = await bcrypt.hash(this.password, salt);
-// });
-
-// export default mongoose.models.JobSeeker || mongoose.model("JobSeeker", jobSeekerSchema);
-
-
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
@@ -197,13 +59,19 @@ const jobSeekerSchema = new mongoose.Schema({
     default: [],
   },
 
+  // ✅ Root-level certifications (removed required: true, added certificateImageUrl)
   certifications: {
     type: [
       {
-        name: { type: String, default: "" },
-        issuer: { type: String, default: "" },
-        date: { type: Date, default: null },
-        url: { type: String, default: "" },
+        id: { type: String, default: "" },
+        title: { type: String, trim: true }, // ✅ REMOVED required: true
+        issuingOrg: { type: String, trim: true }, // ✅ REMOVED required: true
+        issueDate: { type: String, default: "" },
+        expiryDate: { type: String, default: "" },
+        credentialId: { type: String, default: "" },
+        credentialUrl: { type: String, default: "" },
+        certificateImageUrl: { type: String, default: "" }, // ✅ ADDED
+        createdAt: { type: Date, default: Date.now },
       },
     ],
     default: [],
@@ -267,16 +135,19 @@ const jobSeekerSchema = new mongoose.Schema({
 
     skills: { type: [String], default: [] },
 
+    // ✅ Resume certifications (removed required: true, added certificateImageUrl)
     certifications: {
       type: [
         {
           id: { type: String, default: "" },
-          name: { type: String, default: "" },
-          issuer: { type: String, default: "" },
-          date: { type: String, default: "" },
+          title: { type: String, trim: true }, // ✅ REMOVED required: true
+          issuingOrg: { type: String, trim: true }, // ✅ REMOVED required: true
+          issueDate: { type: String, default: "" },
           expiryDate: { type: String, default: "" },
           credentialId: { type: String, default: "" },
-          url: { type: String, default: "" },
+          credentialUrl: { type: String, default: "" },
+          certificateImageUrl: { type: String, default: "" }, // ✅ ADDED
+          createdAt: { type: Date, default: Date.now },
         },
       ],
       default: [],
@@ -307,6 +178,8 @@ const jobSeekerSchema = new mongoose.Schema({
       ],
       default: [],
     },
+
+    interests: { type: [String], default: [] },
   },
 
   createdAt: {

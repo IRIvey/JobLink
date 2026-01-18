@@ -524,23 +524,46 @@ case 'certifications':
 
       <div className="space-y-3">
         {resumeData.certifications.map((cert) => (
-          <div key={cert.id || cert.name} className="flex justify-between gap-4">
+          <div key={cert.id || cert._id} className="flex justify-between gap-4">
             <div>
-              <p className="font-semibold text-gray-900">{cert.name}</p>
+              {/* ✅ FIXED: Use title OR name */}
+              <p className="font-semibold text-gray-900">{cert.title || cert.name}</p>
+              
+              {/* ✅ FIXED: Use issuingOrg OR issuer, and issueDate OR date */}
               <p className="text-sm text-gray-600">
-                {cert.issuer}{cert.date ? ` • ${cert.date}` : ''}
+                {cert.issuingOrg || cert.issuer}
+                {(cert.issueDate || cert.date) ? ` • ${cert.issueDate || cert.date}` : ''}
               </p>
 
-              {cert.url && (
+              {/* ✅ FIXED: Show credentialId if available */}
+              {cert.credentialId && (
+                <p className="text-sm text-gray-500">ID: {cert.credentialId}</p>
+              )}
+
+              {/* ✅ FIXED: Use credentialUrl OR url */}
+              {(cert.credentialUrl || cert.url) && (
                 <a
-                  href={cert.url}
+                  href={cert.credentialUrl || cert.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm font-medium flex items-center gap-1 hover:underline"
+                  className="text-sm font-medium flex items-center gap-1 hover:underline mt-1"
                   style={{ color: template.primaryColor }}
                 >
                   <ExternalLink size={14} />
-                  Credential
+                  View Credential
+                </a>
+              )}
+
+              {/* ✅ NEW: Show certificate image if available */}
+              {cert.certificateImageUrl && (
+                <a
+                  href={cert.certificateImageUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium flex items-center gap-1 hover:underline mt-1"
+                  style={{ color: template.primaryColor }}
+                >
+                  🖼️ View Certificate
                 </a>
               )}
             </div>
@@ -646,74 +669,45 @@ case 'certifications':
 
           <div className="col-span-2 grid grid-cols-2 gap-6">
   {/* Profile Photo */}
-  <div>
-    <label className="block text-sm font-bold text-gray-700 mb-2">Profile Photo</label>
-
+<div className="w-full flex justify-start">
+  <div className="flex flex-col items-start">
     {resumeData.personalInfo.profilePhoto && (
       <img
         src={resumeData.personalInfo.profilePhoto}
         alt="Profile"
-        className="w-24 h-24 rounded-full object-cover border-2 border-gray-300 mb-3"
+        className="w-48 h-60 rounded-md object-cover border-2 border-gray-300 mb-3 shadow-sm"
       />
     )}
 
-    <input
-      type="file"
-      accept="image/*"
-      onChange={async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const base64 = await fileToBase64(file);
-        handlePersonalInfoChange('profilePhoto', base64);
-      }}
-      className="w-full"
-    />
+    <div className="flex flex-col items-start">
+      <input
+        type="file"
+        accept="image/*"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          const base64 = await fileToBase64(file);
+          handlePersonalInfoChange("profilePhoto", base64);
+        }}
+        className="text-sm text-gray-500 cursor-pointer"
+      />
 
-    {resumeData.personalInfo.profilePhoto && (
-      <button
-        type="button"
-        onClick={() => handlePersonalInfoChange('profilePhoto', '')}
-        className="mt-2 text-sm text-red-600 hover:underline"
-      >
-        Remove Photo
-      </button>
-    )}
+      {resumeData.personalInfo.profilePhoto && (
+        <button
+          type="button"
+          onClick={() => handlePersonalInfoChange("profilePhoto", "")}
+          className="mt-2 text-sm text-red-600 hover:underline"
+        >
+          Remove Photo
+        </button>
+      )}
+    </div>
   </div>
+</div>
+
 
   {/* Cover Photo (optional) */}
-  <div>
-    <label className="block text-sm font-bold text-gray-700 mb-2">Cover Photo (Optional)</label>
-
-    {resumeData.personalInfo.coverPhoto && (
-      <img
-        src={resumeData.personalInfo.coverPhoto}
-        alt="Cover"
-        className="w-full h-24 rounded-xl object-cover border-2 border-gray-300 mb-3"
-      />
-    )}
-
-    <input
-      type="file"
-      accept="image/*"
-      onChange={async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const base64 = await fileToBase64(file);
-        handlePersonalInfoChange('coverPhoto', base64);
-      }}
-      className="w-full"
-    />
-
-    {resumeData.personalInfo.coverPhoto && (
-      <button
-        type="button"
-        onClick={() => handlePersonalInfoChange('coverPhoto', '')}
-        className="mt-2 text-sm text-red-600 hover:underline"
-      >
-        Remove Cover
-      </button>
-    )}
-  </div>
+  
 </div>
 
           <h1 className="text-5xl font-bold mb-4" style={{ color: template.primaryColor }}>
@@ -865,7 +859,7 @@ case 'certifications':
                 ) : (
                   <>
                     <Save size={18} />
-                    Save to DB
+                    Save 
                   </>
                 )}
               </button>
@@ -1069,8 +1063,8 @@ case 'certifications':
                 </div>
 
                 <div className="space-y-4">
-                  {resumeData.experience.map((exp, index) => (
-                    <div key={exp.id} className="border-2 border-gray-200 rounded-xl p-6 hover:border-blue-300 transition-all bg-gradient-to-r from-gray-50 to-white">
+                 {resumeData.experience.map((exp, index) => (
+  <div key={exp.id || exp._id || `exp-${index}`} className="border-2 border-gray-200 rounded-xl p-6 hover:border-blue-300 transition-all bg-gradient-to-r from-gray-50 to-white">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
@@ -1201,59 +1195,89 @@ case 'certifications':
               )}
             </div>
           )}
-          {activeTab === 'edit' && activeSection === 'certifications' && (
+         {activeTab === 'edit' && activeSection === 'certifications' && (
   <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
     <h2 className="text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3">
       <Award className="text-blue-600" size={32} />
       Certifications
     </h2>
 
-    {/* Add certification */}
+    {/* Add certification form */}
     <div className="grid grid-cols-2 gap-4 mb-6">
       <input
         type="text"
-        placeholder="Certification name"
-        className="px-4 py-3 border-2 border-gray-300 rounded-xl"
-        id="certName"
+        placeholder="Certification Title (e.g., AWS Solutions Architect)"
+        className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
+        id="certTitle"
       />
       <input
         type="text"
-        placeholder="Issuer"
-        className="px-4 py-3 border-2 border-gray-300 rounded-xl"
-        id="certIssuer"
+        placeholder="Issuing Organization (e.g., Amazon Web Services)"
+        className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
+        id="certIssuingOrg"
       />
       <input
         type="month"
-        className="px-4 py-3 border-2 border-gray-300 rounded-xl"
-        id="certDate"
+        placeholder="Issue Date"
+        className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
+        id="certIssueDate"
+      />
+      <input
+        type="text"
+        placeholder="Credential ID (Optional)"
+        className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
+        id="certCredentialId"
       />
       <input
         type="url"
-        placeholder="Credential URL (optional)"
-        className="px-4 py-3 border-2 border-gray-300 rounded-xl"
-        id="certUrl"
+        placeholder="Credential URL (Optional)"
+        className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
+        id="certCredentialUrl"
       />
+      <input
+        type="url"
+        placeholder="Certificate Image URL (Optional)"
+        className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
+        id="certImageUrl"
+      />
+      
       <div className="col-span-2">
         <button
           onClick={() => {
-            const name = document.getElementById('certName').value.trim();
-            const issuer = document.getElementById('certIssuer').value.trim();
-            const date = document.getElementById('certDate').value;
-            const url = document.getElementById('certUrl').value.trim();
+            const title = document.getElementById('certTitle').value.trim();
+            const issuingOrg = document.getElementById('certIssuingOrg').value.trim();
+            const issueDate = document.getElementById('certIssueDate').value;
+            const credentialId = document.getElementById('certCredentialId').value.trim();
+            const credentialUrl = document.getElementById('certCredentialUrl').value.trim();
+            const certificateImageUrl = document.getElementById('certImageUrl').value.trim();
 
-            if (!name) return showMessage('error', 'Certification name is required');
+            if (!title || !issuingOrg) {
+              return showMessage('error', 'Title and Issuing Organization are required');
+            }
 
-            const newCert = { id: Date.now().toString(), name, issuer, date, url };
+            const newCert = {
+              id: Date.now().toString(),
+              title,
+              issuingOrg,
+              issueDate,
+              credentialId,
+              credentialUrl,
+              certificateImageUrl
+            };
 
             setResumeData((prev) => ({
               ...prev,
               certifications: [...(prev.certifications || []), newCert],
             }));
 
-            document.getElementById('certName').value = '';
-            document.getElementById('certIssuer').value = '';
-            document.getElementById('certDate').value = '';
-            document.getElementById('certUrl').value = '';
+            // Clear form
+            document.getElementById('certTitle').value = '';
+            document.getElementById('certIssuingOrg').value = '';
+            document.getElementById('certIssueDate').value = '';
+            document.getElementById('certCredentialId').value = '';
+            document.getElementById('certCredentialUrl').value = '';
+            document.getElementById('certImageUrl').value = '';
+            
             showMessage('success', 'Certification added!');
           }}
           className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
@@ -1267,31 +1291,66 @@ case 'certifications':
     {/* List certifications */}
     <div className="space-y-3">
       {(resumeData.certifications || []).map((cert) => (
-        <div key={cert.id} className="border-2 border-gray-200 rounded-xl p-4 flex justify-between items-start">
-          <div>
-            <p className="font-bold text-gray-900">{cert.name}</p>
-            <p className="text-sm text-gray-600">{cert.issuer}{cert.date ? ` • ${cert.date}` : ''}</p>
-            {cert.url && (
-              <a className="text-sm text-blue-600 hover:underline" href={cert.url} target="_blank" rel="noreferrer">
-                {cert.url}
-              </a>
+        <div key={cert.id || cert._id} className="border-2 border-gray-200 rounded-xl p-4 flex justify-between items-start hover:border-blue-300 transition-all">
+          <div className="flex-1">
+            <p className="font-bold text-gray-900">{cert.title || cert.name}</p>
+            <p className="text-sm text-gray-600">
+              {cert.issuingOrg || cert.issuer}
+              {(cert.issueDate || cert.date) ? ` • ${cert.issueDate || cert.date}` : ''}
+            </p>
+            
+            {cert.credentialId && (
+              <p className="text-sm text-gray-500 mt-1">🆔 ID: {cert.credentialId}</p>
             )}
+            
+            <div className="flex gap-3 mt-2">
+              {(cert.credentialUrl || cert.url) && (
+                <a 
+                  className="text-sm text-blue-600 hover:underline flex items-center gap-1" 
+                  href={cert.credentialUrl || cert.url} 
+                  target="_blank" 
+                  rel="noreferrer"
+                >
+                  <ExternalLink size={14} />
+                  Credential
+                </a>
+              )}
+              
+              {cert.certificateImageUrl && (
+                <a 
+                  className="text-sm text-blue-600 hover:underline flex items-center gap-1" 
+                  href={cert.certificateImageUrl} 
+                  target="_blank" 
+                  rel="noreferrer"
+                >
+                  🖼️ Certificate
+                </a>
+              )}
+            </div>
           </div>
 
           <button
             onClick={() => {
               setResumeData((prev) => ({
                 ...prev,
-                certifications: prev.certifications.filter((c) => c.id !== cert.id),
+                certifications: prev.certifications.filter((c) => (c.id || c._id) !== (cert.id || cert._id)),
               }));
               showMessage('success', 'Certification removed!');
             }}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-xl"
+            className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-all"
           >
             <Trash2 size={20} />
           </button>
         </div>
       ))}
+      
+      {(!resumeData.certifications || resumeData.certifications.length === 0) && (
+        <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+          <Award className="mx-auto text-gray-400 mb-3" size={48} />
+          <p className="text-gray-500">No certifications added yet</p>
+          <p className="text-sm text-gray-400 mt-1">Add your professional certifications above</p>
+        </div>
+      )}
     </div>
   </div>
 )}
@@ -1314,8 +1373,8 @@ case 'certifications':
                 </div>
 
                 <div className="space-y-4">
-                  {resumeData.education.map((edu, index) => (
-                    <div key={edu.id} className="border-2 border-gray-200 rounded-xl p-6 hover:border-blue-300 transition-all bg-gradient-to-r from-gray-50 to-white">
+                 {resumeData.education.map((edu, index) => (
+  <div key={edu.id || edu._id || `edu-${index}`} className="border-2 border-gray-200 rounded-xl p-6 hover:border-blue-300 transition-all bg-gradient-to-r from-gray-50 to-white">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
@@ -1494,8 +1553,8 @@ case 'certifications':
               </div>
               <div className="flex flex-wrap gap-3">
                 {resumeData.skills.map((skill, index) => (
-                  <div
-                    key={index}
+  <div
+    key={`skill-${index}-${skill}`}
                     className="group flex items-center gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 text-blue-700 px-5 py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
                   >
                     <span>{skill}</span>
@@ -1530,7 +1589,7 @@ case 'certifications':
 
                 <div className="space-y-4">
                   {resumeData.projects.map((proj, index) => (
-                    <div key={proj.id} className="border-2 border-gray-200 rounded-xl p-6 hover:border-blue-300 transition-all bg-gradient-to-r from-gray-50 to-white">
+  <div key={proj.id || proj._id || `proj-${index}`} className="border-2 border-gray-200 rounded-xl p-6 hover:border-blue-300 transition-all bg-gradient-to-r from-gray-50 to-white">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
@@ -1653,7 +1712,7 @@ case 'certifications':
               <p className="text-gray-600 mb-6">List your proficiency in various programming languages</p>
               <div className="grid grid-cols-2 gap-4">
                 {resumeData.languages.map((lang, index) => (
-                  <div key={index} className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
+  <div key={lang.id || lang._id || `lang-${index}-${lang.language}`} className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
                     <span className="font-bold text-gray-900">{lang.language}</span>
                     <span className="text-sm px-4 py-2 rounded-full bg-white border-2 border-blue-300 text-blue-700 font-semibold">
                       {lang.proficiency}
@@ -1671,9 +1730,9 @@ case 'certifications':
                 Interests & Passions
               </h2>
               <div className="flex flex-wrap gap-3">
-                {resumeData.interests && resumeData.interests.map((interest, index) => (
-                  <span 
-                    key={index} 
+              {resumeData.interests && resumeData.interests.map((interest, index) => (
+  <span 
+    key={`interest-${index}-${interest}`} 
                     className="px-6 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 text-purple-700"
                   >
                     {interest}

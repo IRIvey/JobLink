@@ -12,6 +12,8 @@ import {
   Search,
   TrendingUp,
 } from "lucide-react";
+import  { useMemo } from "react";
+
 
 // ✅ Import your pages
 import DashboardHome from "./DashboardHome";

@@ -9,13 +9,22 @@ import applicationRoutes from "./routes/applicationRoutes.js";
 import resumeRoutes from "./routes/resumeRoutes.js";
 import companyRoutes from "./routes/companyRoutes.js";
 import profileRoutes from "./routes/jobSeekerProfileRoutes.js";
+import path from "path";
+import { fileURLToPath } from "url";
 dotenv.config();
-
 const app = express();
+
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "20mb" }));
+app.use(express.urlencoded({ limit: "20mb", extended: true }));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 
 // Connect to MongoDB
 connectDB();
