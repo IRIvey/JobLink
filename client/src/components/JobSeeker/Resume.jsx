@@ -103,6 +103,7 @@ const [sectionOrder, setSectionOrder] = useState([
   const [editingExperience, setEditingExperience] = useState(null);
   const [editingEducation, setEditingEducation] = useState(null);
   const [editingProject, setEditingProject] = useState(null);
+  const [editingLanguage, setEditingLanguage] = useState(null); 
 
   // Fetch resume data on component mount
   useEffect(() => {
@@ -311,6 +312,41 @@ const [sectionOrder, setSectionOrder] = useState([
     });
     showMessage('success', 'Project deleted successfully!');
   };
+
+  const addLanguage = () => {
+  setEditingLanguage({
+    id: Date.now().toString(),
+    language: '',
+    proficiency: ''
+  });
+};
+
+const saveLanguage = () => {
+  if (!editingLanguage) return;
+  
+  const existingIndex = resumeData.languages.findIndex(lang => lang.id === editingLanguage.id);
+  let newLanguages;
+  
+  if (existingIndex >= 0) {
+    newLanguages = [...resumeData.languages];
+    newLanguages[existingIndex] = editingLanguage;
+  } else {
+    newLanguages = [...resumeData.languages, editingLanguage];
+  }
+  
+  setResumeData({ ...resumeData, languages: newLanguages });
+  setEditingLanguage(null);
+  showMessage('success', 'Language saved successfully!');
+};
+
+const deleteLanguage = (id) => {
+  if (!window.confirm('Are you sure you want to delete this language?')) return;
+  setResumeData({
+    ...resumeData,
+    languages: resumeData.languages.filter(lang => lang.id !== id)
+  });
+  showMessage('success', 'Language deleted successfully!');
+};
 
   const addSkill = (skill) => {
     if (skill.trim() && !resumeData.skills.includes(skill.trim())) {
@@ -681,11 +717,15 @@ case 'certifications':
     
     {/* Name and Title - Right Side */}
     <div className="flex-1 text-left">
-      <h1 className="text-5xl font-bold mb-2" style={{ color: template.primaryColor }}>
-        {resumeData.personalInfo.fullName.toUpperCase()}
-      </h1>
+    <h1
+  className="text-5xl font-bold mb-2"
+  style={{ color: template.primaryColor, marginTop: "1cm" }}
+>
+  {resumeData.personalInfo.fullName.toUpperCase()}
+</h1>
+
       <p className="text-xl font-semibold mb-4" style={{ color: template.accentColor }}>
-        Software Engineering Student
+      
       </p>
     </div>
   </div>
@@ -1677,25 +1717,108 @@ case 'certifications':
             </div>
           )}
 
-          {activeTab === 'edit' && activeSection === 'languages' && (
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <Languages className="text-blue-600" size={32} />
-                Programming Languages
-              </h2>
-              <p className="text-gray-600 mb-6">List your proficiency in various programming languages</p>
-              <div className="grid grid-cols-2 gap-4">
-                {resumeData.languages.map((lang, index) => (
-  <div key={lang.id || lang._id || `lang-${index}-${lang.language}`} className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
-                    <span className="font-bold text-gray-900">{lang.language}</span>
-                    <span className="text-sm px-4 py-2 rounded-full bg-white border-2 border-blue-300 text-blue-700 font-semibold">
-                      {lang.proficiency}
-                    </span>
-                  </div>
-                ))}
+     {activeTab === 'edit' && activeSection === 'languages' && (
+  <div className="space-y-6">
+    <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+          <Languages className="text-blue-600" size={32} />
+          Languages
+        </h2>
+        <button
+          onClick={addLanguage}
+          className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+        >
+          <Plus size={20} />
+          Add Language
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {resumeData.languages.map((lang, index) => (
+          <div key={lang.id || lang._id || `lang-${index}`} className="border-2 border-gray-200 rounded-xl p-6 hover:border-blue-300 transition-all bg-gradient-to-r from-gray-50 to-white">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded">
+                    #{index + 1}
+                  </span>
+                  <h3 className="font-bold text-xl text-gray-900">{lang.language}</h3>
+                </div>
+                <p className="text-sm text-gray-600">
+                  <span className="font-semibold text-blue-600">Proficiency:</span> {lang.proficiency}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setEditingLanguage(lang)}
+                  className="p-3 text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                >
+                  <Edit2 size={20} />
+                </button>
+                <button
+                  onClick={() => deleteLanguage(lang.id)}
+                  className="p-3 text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                >
+                  <Trash2 size={20} />
+                </button>
               </div>
             </div>
-          )}
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {editingLanguage && (
+      <div className="bg-white rounded-2xl shadow-xl border-2 border-blue-500 p-8">
+        <h3 className="text-2xl font-bold text-gray-900 mb-6">
+          {resumeData.languages.find(l => l.id === editingLanguage.id) ? 'Edit' : 'Add'} Language
+        </h3>
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Language *</label>
+            <input
+              type="text"
+              value={editingLanguage.language}
+              onChange={(e) => setEditingLanguage({ ...editingLanguage, language: e.target.value })}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="C++,java, etc."
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Proficiency Level *</label>
+            <select
+              value={editingLanguage.proficiency}
+              onChange={(e) => setEditingLanguage({ ...editingLanguage, proficiency: e.target.value })}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+           <option value="">Select programming proficiency</option>
+  <option value="Beginner">Beginner</option>
+  <option value="Intermediate">Intermediate</option>
+  <option value="Advanced">Advanced</option>
+  <option value="Expert">Expert</option>
+            </select>
+          </div>
+        </div>
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={saveLanguage}
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+          >
+            <Save size={20} />
+            Save Language
+          </button>
+          <button
+            onClick={() => setEditingLanguage(null)}
+            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition-all"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    )}
+  </div>
+)}
 
           {activeTab === 'edit' && activeSection === 'interests' && (
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">

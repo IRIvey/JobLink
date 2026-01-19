@@ -291,20 +291,21 @@ const JobSeekerProfile = ({ userData, onUpdate }) => {
                 </button>
               </div>
 
-              <div className="pb-2">
-                {isEditing ? (
-                  <input
-                    name="fullName"
-                    value={formData.fullName}
-                    onChange={handleInputChange}
-                    placeholder="Full Name"
-                    className="text-3xl font-bold text-gray-900 mb-2 w-full border-b-2 border-gray-200 focus:border-indigo-600 outline-none"
-                  />
-                ) : (
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                    {formData.fullName || "Add Your Name"}
-                  </h1>
-                )}
+          <div className="pb-2">
+  {/* Remove this editing input for name */}
+  {/* {isEditing ? (
+    <input
+      name="fullName"
+      value={formData.fullName}
+      onChange={handleInputChange}
+      placeholder="Full Name"
+      className="text-3xl font-bold text-gray-900 mb-2 w-full border-b-2 border-gray-200 focus:border-indigo-600 outline-none"
+    />
+  ) : ( */}
+    <h1 className="text-3xl font-bold text-gray-900 mb-2">
+      {formData.fullName || "Add Your Name"}
+    </h1>
+  {/* )} */}
 
                 <div className="flex flex-wrap gap-4 text-gray-600">
                   <div className="flex items-center gap-1">
@@ -404,38 +405,46 @@ const JobSeekerProfile = ({ userData, onUpdate }) => {
           )}
 
           {/* Extra fields when editing */}
-          {isEditing && (
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                placeholder="Phone"
-                className="w-full p-3 border rounded-xl"
-              />
-              <input
-                name="website"
-                value={formData.website}
-                onChange={handleInputChange}
-                placeholder="Website"
-                className="w-full p-3 border rounded-xl"
-              />
-              <input
-                name="linkedin"
-                value={formData.linkedin}
-                onChange={handleInputChange}
-                placeholder="LinkedIn"
-                className="w-full p-3 border rounded-xl"
-              />
-              <input
-                name="github"
-                value={formData.github}
-                onChange={handleInputChange}
-                placeholder="GitHub"
-                className="w-full p-3 border rounded-xl"
-              />
-            </div>
-          )}
+        {/* Extra fields when editing */}
+{isEditing && (
+  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+    <input
+      name="fullName"
+      value={formData.fullName}
+      onChange={handleInputChange}
+      placeholder="Full Name"
+      className="w-full p-3 border rounded-xl"
+    />
+    <input
+      name="phone"
+      value={formData.phone}
+      onChange={handleInputChange}
+      placeholder="Phone"
+      className="w-full p-3 border rounded-xl"
+    />
+    <input
+      name="website"
+      value={formData.website}
+      onChange={handleInputChange}
+      placeholder="Website"
+      className="w-full p-3 border rounded-xl"
+    />
+    <input
+      name="linkedin"
+      value={formData.linkedin}
+      onChange={handleInputChange}
+      placeholder="LinkedIn"
+      className="w-full p-3 border rounded-xl"
+    />
+    <input
+      name="github"
+      value={formData.github}
+      onChange={handleInputChange}
+      placeholder="GitHub"
+      className="w-full p-3 border rounded-xl"
+    />
+  </div>
+)}
 
           {/* Skills */}
           <div className="mt-6">
