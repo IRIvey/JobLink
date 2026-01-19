@@ -256,7 +256,7 @@ export const updateCompany = [
 export const createJob = async (req, res) => {
   try {
     // 1. Logged-in company ID (from protect middleware)
-    const companyId = req.user.id;
+    const companyId = req.companyId;
 
     // 2. Fetch company
     const company = await Company.findById(companyId);
@@ -309,7 +309,7 @@ export const createJob = async (req, res) => {
       location: company.location,
       type: req.body.type,
       experience: req.body.experience,
-      salary,
+      salary: req.body.salary,
       skills,
       status: "active"
     });
@@ -332,9 +332,8 @@ export const createJob = async (req, res) => {
 export const getJobSkillsForCompany = async (req, res) => {
   try {
     // company id from auth middleware
-    const companyId = req.companyId || req.user?.id;
-
-    const company = await Company.findById(companyId).select("industry");
+    // Example: Company has a `user` field that links to the logged-in user
+    const company = await Company.findOne(req.companyId).select("industry");
     if (!company) {
       return res.status(404).json({
         success: false,
