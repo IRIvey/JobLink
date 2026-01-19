@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import Select from "react-select";
+import axios from "axios";
 
 const skillOptions = [
   { value: "javascript", label: "JavaScript" },
@@ -11,17 +12,78 @@ const skillOptions = [
 ];
 
 const PostJob = () => {
+  const [title, setTitle] = useState("");
+  const [selectedSkills, setSelectedSkills] = useState([]);
+  const [jobType, setJobType] = useState("");
+  const [salary, setSalary] = useState("");
+  const [experience, setExperience] = useState("");
+  const [description, setDescription] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const experienceMap = {
+    "Entry Level": "entry",
+    "Mid Level": "mid",
+    "Senior Level": "senior",
+    "Lead / Management": "lead",
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage("");
+
+    try {
+      const res = await axios.post(
+        'http://localhost:5001/api/company/jobs', // <-- your backend route
+        {
+          title,
+          skills: selectedSkills.map((s) => s.label), // send skill labels
+          type: jobType,
+          salary, // single string input like "$80k - $120k"
+          experience: experienceMap[experience],
+          description,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`, // if using JWT
+          },
+        }
+      );
+
+      setMessage("Job posted successfully!");
+      // Reset form
+      setTitle("");
+      setSelectedSkills([]);
+      setJobType("");
+      setSalary("");
+      setExperience("");
+      setDescription("");
+    } catch (err) {
+      console.error(err);
+      setMessage(err.response?.data?.message || "Failed to post job");
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-3xl">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Post a New Job</h1>
 
-      <form className="space-y-6">
+      
+      {message && (
+        <div className="mb-4 text-center text-sm text-red-500">{message}</div>
+      )}
+
+      <form className="space-y-6" onSubmit={handleSubmit}>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Job Title *
           </label>
           <input
             type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             placeholder="e.g. Senior React Developer"
           />
@@ -35,6 +97,8 @@ const PostJob = () => {
             </label>
             <Select
               isMulti
+              value={selectedSkills}
+              onChange={setSelectedSkills}
               options={skillOptions}
               placeholder="Select skills..."
               classNamePrefix="select"
@@ -45,7 +109,11 @@ const PostJob = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Job Type *
             </label>
-            <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            <select 
+            value={jobType}
+            onChange={(e) => setJobType(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+              <option value="" disabled selected>Select job type...</option>
               <option>Full-time</option>
               <option>Part-time</option>
               <option>Contract</option>
@@ -62,6 +130,8 @@ const PostJob = () => {
             </label>
             <input
               type="text"
+              value={salary}
+              onChange={(e) => setSalary(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
               placeholder="e.g. $80k - $120k"
             />
@@ -71,7 +141,11 @@ const PostJob = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Experience Level
             </label>
-            <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            <select 
+            value={experience}
+            onChange={(e) => setExperience(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+              <option value="" disabled selected>Select experience level...</option>
               <option>Entry Level</option>
               <option>Mid Level</option>
               <option>Senior Level</option>
@@ -86,6 +160,8 @@ const PostJob = () => {
           </label>
           <textarea
             rows="6"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
             placeholder="Describe the role, responsibilities, and requirements..."
           />
@@ -94,9 +170,10 @@ const PostJob = () => {
         <div className="flex gap-4">
           <button
             type="submit"
+            disabled={loading}
             className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
           >
-            Publish Job
+            {loading ? "Posting..." : "Publish Job"}
           </button>
 
           <button
