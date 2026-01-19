@@ -24,7 +24,7 @@ const PostJob = () => {
     const fetchSkills = async () => {
       try {
         const res = await axios.get(
-          "http://localhost:5001/api/company/skills", 
+          "http://localhost:5001/api/companies/skills", 
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -54,7 +54,7 @@ const PostJob = () => {
 
     try {
       const res = await axios.post(
-        'http://localhost:5001/api/company/jobs', // <-- your backend route
+        'http://localhost:5001/api/companies/jobs', // <-- your backend route
         {
           title,
           skills: selectedSkills.map((s) => s.label), // send skill labels
