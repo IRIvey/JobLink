@@ -40,6 +40,7 @@ app.use("/api/resume", resumeRoutes);
 app.use('/api/jobseeker/profile', profileRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/applications", applicationRoutes);
+
 app.use("/api/companies", companyRoutes);
 
 

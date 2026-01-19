@@ -7,6 +7,7 @@ import CompanyAuth from "./components/Auth/CompanyAuth.jsx";
 import Home from "./components/Home.jsx";
 import CompanyDashboard from "./components/Company/Companydashboard.jsx";
 import CompanyProfile from "./components/Company/CompanyProfilePage.jsx";
+import PostJob from "./components/Company/PostJob.jsx";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -90,6 +91,8 @@ function App() {
           <>
             <Route path="/company" element={< CompanyDashboard />} />
             <Route path="/company/profile" element={<CompanyProfile />} />
+            <Route path="/company/post-job" element={<PostJob />} />
+
           </>
         )}
 
