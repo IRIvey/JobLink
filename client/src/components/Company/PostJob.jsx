@@ -1,18 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Select from "react-select";
 import axios from "axios";
 
-const skillOptions = [
-  { value: "javascript", label: "JavaScript" },
-  { value: "react", label: "React" },
-  { value: "nodejs", label: "Node.js" },
-  { value: "mongodb", label: "MongoDB" },
-  { value: "typescript", label: "TypeScript" },
-  { value: "uiux", label: "UI/UX" },
-];
-
 const PostJob = () => {
   const [title, setTitle] = useState("");
+  const [skillsOptions, setSkillsOptions] = useState([]);
   const [selectedSkills, setSelectedSkills] = useState([]);
   const [jobType, setJobType] = useState("");
   const [salary, setSalary] = useState("");
@@ -27,6 +19,33 @@ const PostJob = () => {
     "Senior Level": "senior",
     "Lead / Management": "lead",
   };
+
+  useEffect(() => {
+    const fetchSkills = async () => {
+      try {
+        const res = await axios.get(
+          "http://localhost:5001/api/company/skills", 
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        const options = res.data.skills.map((skill) => ({
+          value: skill,
+          label: skill,
+        }));
+
+        setSkillsOptions(options);
+      } catch (err) {
+        console.error("Failed to fetch skills:", err);
+      }
+    };
+
+    fetchSkills();
+  }, []);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -99,7 +118,7 @@ const PostJob = () => {
               isMulti
               value={selectedSkills}
               onChange={setSelectedSkills}
-              options={skillOptions}
+              options={skillsOptions}
               placeholder="Select skills..."
               classNamePrefix="select"
             />
@@ -113,7 +132,7 @@ const PostJob = () => {
             value={jobType}
             onChange={(e) => setJobType(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-              <option value="" disabled selected>Select job type...</option>
+              <option value="" disabled>Select job type...</option>
               <option>Full-time</option>
               <option>Part-time</option>
               <option>Contract</option>
@@ -145,7 +164,7 @@ const PostJob = () => {
             value={experience}
             onChange={(e) => setExperience(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-              <option value="" disabled selected>Select experience level...</option>
+              <option value="" disabled>Select experience level...</option>
               <option>Entry Level</option>
               <option>Mid Level</option>
               <option>Senior Level</option>
