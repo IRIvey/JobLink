@@ -128,16 +128,21 @@ const PostJob = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Job Type *
             </label>
-            <select 
-            value={jobType}
-            onChange={(e) => setJobType(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-              <option value="" disabled>Select job type...</option>
-              <option>Full-time</option>
-              <option>Part-time</option>
-              <option>Contract</option>
-              <option>Freelance</option>
-              <option>Internship</option>
+            <select
+              value={jobType}
+              onChange={(e) => setJobType(e.target.value)}
+              className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                jobType === "" ? "text-gray-400" : "text-gray-900"
+              }`}
+            >
+              <option value="" disabled className="text-gray-900">
+                Select job type...
+              </option>
+              <option className="text-gray-900">Full-time</option>
+              <option className="text-gray-900">Part-time</option>
+              <option className="text-gray-900">Contract</option>
+              <option className="text-gray-900">Freelance</option>
+              <option className="text-gray-900">Internship</option>
             </select>
           </div>
         </div>
@@ -160,15 +165,20 @@ const PostJob = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Experience Level
             </label>
-            <select 
-            value={experience}
-            onChange={(e) => setExperience(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-              <option value="" disabled>Select experience level...</option>
-              <option>Entry Level</option>
-              <option>Mid Level</option>
-              <option>Senior Level</option>
-              <option>Lead / Management</option>
+            <select
+              value={experience}
+              onChange={(e) => setExperience(e.target.value)}
+              className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 ${
+                experience === "" ? "text-gray-400" : "text-gray-900"
+              }`}
+            >
+              <option value="" disabled className="text-gray-900">
+                Select experience level...
+              </option>
+              <option className="text-gray-900">Entry Level</option>
+              <option className="text-gray-900">Mid Level</option>
+              <option className="text-gray-900">Senior Level</option>
+              <option className="text-gray-900">Lead / Management</option>
             </select>
           </div>
         </div>
@@ -193,13 +203,6 @@ const PostJob = () => {
             className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
           >
             {loading ? "Posting..." : "Publish Job"}
-          </button>
-
-          <button
-            type="button"
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            Save as Draft
           </button>
         </div>
       </form>
