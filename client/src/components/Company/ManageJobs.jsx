@@ -29,10 +29,7 @@ const ManageJobs = ({ jobs, setJobs }) => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Job Postings</h1>
 
-        <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
-          <Plus size={18} />
-          Post New Job
-        </button>
+
       </div>
 
       <div className="grid gap-4">
