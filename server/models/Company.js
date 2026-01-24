@@ -66,6 +66,18 @@ const companySchema = new mongoose.Schema({
   ],
 },
 
+ profilePhoto: 
+{ 
+  type: String, 
+  default: "" 
+},
+coverPhoto: 
+{ 
+  type: String, 
+  default: "" 
+},   
+
+
 certificates: [
   {
     name: {
@@ -127,16 +139,6 @@ licenses: [
     type: Number,
     required: [true, "Total number of employees is required"],
     min: [1, "There must be at least 1 employee"],
-  },
-  logo: {
-  type: String,
-  trim: true,
-  default: "", 
-  },
-  coverPhoto: {
-  type: String,
-  trim: true,
-  default: "",
   },
   createdAt: {
     type: Date,
