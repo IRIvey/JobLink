@@ -319,27 +319,7 @@ export const createJob = async (req, res) => {
   }
 };
 
-export const getCompanyJobs = async (req, res) => {
-  try {
-    const companyId = req.user.id;
 
-    const jobs = await Job.find({ company: companyId })
-      .sort({ postedDate: -1 });
-
-    res.status(200).json({
-      success: true,
-      count: jobs.length,
-      jobs
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch jobs",
-      error: error.message
-    });
-  }
-};
 
 export const getJobSkillsForCompany = async (req, res) => {
   try {
@@ -372,6 +352,28 @@ export const getJobSkillsForCompany = async (req, res) => {
       success: false,
       message: "Failed to fetch skills",
       error: error.message,
+    });
+  }
+};
+
+export const getCompanyJobs = async (req, res) => {
+  try {
+    const companyId = req.user.id;
+
+    const jobs = await Job.find({ company: companyId })
+      .sort({ postedDate: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: jobs.length,
+      jobs
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch jobs",
+      error: error.message
     });
   }
 };

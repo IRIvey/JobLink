@@ -55,18 +55,18 @@ const CompanyDashboard = () => {
     }
   };
 
-  const fetchJobs = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5001/api/jobs", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (res.ok) setJobs(data.jobs || []);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+const fetchJobs = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch("http://localhost:5001/api/companies/jobs", { // ✅ Changed URL
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (res.ok) setJobs(data.jobs || []);
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   const fetchApplications = async () => {
     try {
