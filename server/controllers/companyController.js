@@ -343,9 +343,12 @@ export const getJobSkillsForCompany = async (req, res) => {
 
     const industry = company.industry;
 
-    const skills =
-      INDUSTRY_SKILLS[industry] || INDUSTRY_SKILLS.Other;
-
+    const skills = [
+      ...new Set([
+        ...(INDUSTRY_SKILLS[industry] || INDUSTRY_SKILLS.Other),
+        ...INDUSTRY_SKILLS.UNIVERSAL_SKILLS
+      ])
+    ]
     res.status(200).json({
       success: true,
       industry,
