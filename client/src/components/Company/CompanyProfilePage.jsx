@@ -64,7 +64,7 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
   const handleSave = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5001/api/company/profile', {
+      const response = await fetch('http://localhost:5001/api/companies/profile', {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json', 

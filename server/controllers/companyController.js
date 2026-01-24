@@ -170,7 +170,7 @@ export const getCompanyProfile = async (req, res) => {
 export const updateCompany = [
   // Multer middleware to handle logo and coverPhoto uploads
   upload.fields([
-    { name: "logo", maxCount: 1 },
+    { name: "profilePhoto", maxCount: 1 },
     { name: "coverPhoto", maxCount: 1 },
   ]),
 
@@ -218,8 +218,8 @@ export const updateCompany = [
 
       // Handle uploaded files
       if (req.files) {
-        if (req.files.logo) {
-          updates.logo = req.files.logo[0].path;
+        if (req.files.profilePhoto) {
+          updates.profilePhoto = req.files.profilePhoto[0].path;
         }
         if (req.files.coverPhoto) {
           updates.coverPhoto = req.files.coverPhoto[0].path;
@@ -343,9 +343,12 @@ export const getJobSkillsForCompany = async (req, res) => {
 
     const industry = company.industry;
 
-    const skills =
-      INDUSTRY_SKILLS[industry] || INDUSTRY_SKILLS.Other;
-
+    const skills = [
+      ...new Set([
+        ...(INDUSTRY_SKILLS[industry] || INDUSTRY_SKILLS.Other),
+        ...INDUSTRY_SKILLS.UNIVERSAL_SKILLS
+      ])
+    ]
     res.status(200).json({
       success: true,
       industry,
