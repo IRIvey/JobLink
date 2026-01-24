@@ -24,7 +24,7 @@ import {
   getApplicationDetails,
   withdrawApplication,
   getDashboardStats
-} from "../controllers/JobSeekerController.js";
+} from "../controllers/JobseekerController.js";
 
 const router = express.Router();
 

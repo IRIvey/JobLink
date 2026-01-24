@@ -114,14 +114,14 @@ const jobSchema = new mongoose.Schema({
     required: true
   },
 
-experience: {
-  type: String,
-  required: true,
-  enum: {
-    values: ["entry", "mid", "senior", "lead"],
-    message: "{VALUE} is not a valid experience level"
-  }
-},
+  experience: {
+    type: String,
+    required: true,
+    enum: {
+      values: ["entry", "mid", "senior", "lead"],
+      message: "{VALUE} is not a valid experience level"
+    }
+  },
 
   salary: {
     type: {
@@ -166,10 +166,17 @@ jobSchema.pre("save", function (next) {
 
 // Indexes
 jobSchema.index({ title: "text", description: "text", skills: "text" });
-
-// ❌ removed `experienceLevel` because it doesn't exist in schema
 jobSchema.index({ location: 1, type: 1 });
-
 jobSchema.index({ postedDate: -1 });
+
+// Virtual field to populate company name
+jobSchema.virtual("companyName").get(function () {
+  return this.company?.companyName;
+});
+
+
+// Ensure virtuals are included in JSON
+jobSchema.set('toJSON', { virtuals: true });
+jobSchema.set('toObject', { virtuals: true });
 
 export default mongoose.model("Job", jobSchema);
