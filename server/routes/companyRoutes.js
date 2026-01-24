@@ -10,4 +10,5 @@ router.put("/profile", protect, authorizeRoles("company"), updateCompany);
 
 router.post("/jobs", protect, authorizeRoles("company"), createJob);
 router.get("/skills", protect, authorizeRoles("company"), getJobSkillsForCompany);
+
 export default router;

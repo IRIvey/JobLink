@@ -118,14 +118,14 @@ const jobSchema = new mongoose.Schema({
     required: true
   },
 
-experience: {
-  type: String,
-  required: true,
-  enum: {
-    values: ["entry", "mid", "senior", "lead"],
-    message: "{VALUE} is not a valid experience level"
-  }
-},
+  experience: {
+    type: String,
+    required: true,
+    enum: {
+      values: ["entry", "mid", "senior", "lead"],
+      message: "{VALUE} is not a valid experience level"
+    }
+  },
 
   salary: {
     type: {
@@ -162,18 +162,14 @@ experience: {
   }
 });
 
-// Update updatedAt field before saving
-jobSchema.pre("save", function (next) {
+// ✅ FIXED: Removed next parameter and next() call
+jobSchema.pre("save", function () {
   this.updatedAt = Date.now();
-  next();
 });
 
 // Indexes
 jobSchema.index({ title: "text", description: "text", skills: "text" });
-
-// ❌ removed `experienceLevel` because it doesn't exist in schema
 jobSchema.index({ location: 1, type: 1 });
-
 jobSchema.index({ postedDate: -1 });
 
 export default mongoose.model("Job", jobSchema);
