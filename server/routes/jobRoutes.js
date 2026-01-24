@@ -9,29 +9,32 @@ import {
   saveJob,
   unsaveJob,
   getSavedJobs,
-  applyToJob
+  applyToJob,
+  getUserApplications
 } from '../controllers/jobController.js';
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Public routes
+// 1. PUBLIC GENERAL ROUTES
 router.get('/', getAllJobs);
 
-// Protected routes for job seekers (MUST come before /:id route)
+// 2. SPECIFIC PROTECTED ROUTES (Always put these BEFORE any :id routes)
+router.get("/applications", protect, getUserApplications); // Moved from bottom to top
 router.get('/user/recommendations', protect, authorizeRoles('jobseeker'), getRecommendations);
 router.get('/user/saved', protect, authorizeRoles('jobseeker'), getSavedJobs);
-router.post('/:id/save', protect, authorizeRoles('jobseeker'), saveJob);
-router.delete('/:id/save', protect, authorizeRoles('jobseeker'), unsaveJob);
 
-// Public route with ID parameter (MUST come after specific routes)
-router.get('/:id', getJobById);
+// 3. ROUTES WITH ID PARAMETERS (Put these AFTER specific routes)
+router.get('/:id', getJobById); // Now it won't intercept "/applications"
 
-// Protected routes for companies (you can adjust roles as needed)
+// 4. ACTION ROUTES (POST/PUT/DELETE)
 router.post('/', protect, authorizeRoles('company'), createJob);
 router.put('/:id', protect, authorizeRoles('company'), updateJob);
 router.delete('/:id', protect, authorizeRoles('company'), deleteJob);
-//apply
-router.post('/:id/apply', protect, applyToJob);
+
+router.post('/:id/save', protect, authorizeRoles('jobseeker'), saveJob);
+router.delete('/:id/save', protect, authorizeRoles('jobseeker'), unsaveJob);
+
+router.post("/:id/apply", protect, applyToJob);
 
 export default router;

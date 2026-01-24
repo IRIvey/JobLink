@@ -5,7 +5,7 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 //import jobSeekerRoutes from "./routes/jobSeekerRoutes.js";
 import jobRoutes from "./routes/jobRoutes.js";
-import applicationRoutes from "./routes/applicationRoutes.js";
+//import applicationRoutes from "./routes/applicationRoutes.js";
 import resumeRoutes from "./routes/resumeRoutes.js";
 import companyRoutes from "./routes/companyRoutes.js";
 import profileRoutes from "./routes/jobSeekerProfileRoutes.js";
@@ -39,7 +39,7 @@ app.use("/api/resume", resumeRoutes);
 //app.use("/api/jobseeker", jobSeekerRoutes);
 app.use('/api/jobseeker/profile', profileRoutes);
 app.use("/api/jobs", jobRoutes);
-app.use("/api/applications", applicationRoutes);
+//app.use("/api/applications", applicationRoutes);
 
 app.use("/api/companies", companyRoutes);
 

@@ -1,27 +1,98 @@
 import Job from "../models/Job.js";
 import JobSeeker from "../models/JobSeeker.js";
-
+import Application from "../models/Application.js";
+import mongoose from "mongoose";
 
 
 
 //apply jobs
 export const applyToJob = async (req, res) => {
   try {
-    const userId = req.user.id;
     const jobId = req.params.id;
+    const userId = req.user?.id || req.user?._id || req.user?.userId;
 
-    // Add your application logic here
-    // Example: Save application to database
-    
-    res.status(200).json({
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(jobId)) {
+      return res.status(400).json({ success: false, message: "Invalid job id" });
+    }
+
+    const job = await Job.findById(jobId).select("company title location");
+    if (!job) {
+      return res.status(404).json({ success: false, message: "Job not found" });
+    }
+
+    if (!job.company) {
+      return res.status(400).json({ success: false, message: "Job has no company set" });
+    }
+
+    const exists = await Application.findOne({ jobSeeker: userId, job: jobId });
+    if (exists) {
+      return res.status(400).json({ success: false, message: "Already applied" });
+    }
+
+    const appDoc = await Application.create({
+      jobSeeker: userId,
+      job: jobId,
+      company: job.company,
+      status: "pending",
+      appliedDate: new Date(),
+    });
+
+    return res.status(201).json({
       success: true,
-      message: "Application submitted successfully"
+      message: "Application submitted",
+      application: appDoc,
+    });
+  } catch (err) {
+    console.error("applyToJob error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to apply",
+      error: err.message,
+    });
+  }
+};
+// Get all applications for the logged-in user
+export const getUserApplications = async (req, res) => {
+  try {
+    // FIX: Match the ID logic from your applyToJob function
+    const userId = req.user?.id || req.user?._id || req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "User not authenticated" });
+    }
+
+    const { status = "all" } = req.query;
+    const query = { jobSeeker: userId };
+    
+    // Ensure "all" doesn't filter by status
+    if (status !== "all") query.status = status;
+
+    const applications = await Application.find(query)
+      .populate({
+        path: "job",
+        select: "title location type postedDate",
+      })
+      .populate({
+        path: "company",
+        select: "companyName logo location industry",
+      })
+      .sort({ appliedDate: -1 });
+
+    return res.status(200).json({
+      success: true,
+      count: applications.length,
+      applications, // Ensure this key matches what frontend expects
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("getUserApplications error:", error);
+    return res.status(500).json({
       success: false,
-      message: "Error submitting application",
-      error: error.message
+      message: "Failed to fetch applications",
+      error: error.message,
     });
   }
 };

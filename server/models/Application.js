@@ -3,71 +3,69 @@ import mongoose from "mongoose";
 const applicationSchema = new mongoose.Schema({
   jobSeeker: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'JobSeeker',
-    required: true
+    ref: "JobSeeker",
+    required: true,
   },
   job: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Job',
-    required: true
+    ref: "Job",
+    required: true,
   },
   company: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Company',
-    required: true
+    ref: "Company",
+    required: true,
   },
   status: {
     type: String,
-    enum: ['pending', 'reviewing', 'interview', 'accepted', 'rejected'],
-    default: 'pending'
+    enum: ["pending", "reviewing", "interview", "accepted", "rejected"],
+    default: "pending",
   },
   coverLetter: {
     type: String,
-    trim: true
+    trim: true,
   },
   resumeSnapshot: {
-    type: Object // Snapshot of resume at time of application
+    type: Object,
   },
   appliedDate: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
-  statusHistory: [{
-    status: String,
-    updatedAt: {
-      type: Date,
-      default: Date.now
+  statusHistory: [
+    {
+      status: String,
+      updatedAt: {
+        type: Date,
+        default: Date.now,
+      },
+      notes: String,
     },
-    notes: String
-  }],
+  ],
   notes: {
     type: String,
-    trim: true
+    trim: true,
   },
   updatedAt: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
 
 // Prevent duplicate applications
 applicationSchema.index({ jobSeeker: 1, job: 1 }, { unique: true });
 
-// Update the updatedAt field before saving
-applicationSchema.pre('save', function(next) {
+// ✅ IMPORTANT: use function (next) { ... }  (NOT arrow function)
+applicationSchema.pre("save", function () {
   this.updatedAt = Date.now();
-  next();
-});
 
-// Add to status history when status changes
-applicationSchema.pre('save', function(next) {
-  if (this.isModified('status') && !this.isNew) {
+  if (this.isModified("status") && !this.isNew) {
     this.statusHistory.push({
       status: this.status,
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     });
   }
-  next();
 });
+
 
 export default mongoose.model("Application", applicationSchema);
