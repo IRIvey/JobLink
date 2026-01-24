@@ -58,7 +58,7 @@ const CompanyDashboard = () => {
   const fetchJobs = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5001/api/jobs", {
+      const res = await fetch("http://localhost:5001/api/companies/jobs", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
