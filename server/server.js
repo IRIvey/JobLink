@@ -9,6 +9,8 @@ import jobRoutes from "./routes/jobRoutes.js";
 import resumeRoutes from "./routes/resumeRoutes.js";
 import companyRoutes from "./routes/companyRoutes.js";
 import profileRoutes from "./routes/jobSeekerProfileRoutes.js";
+import messageRoutes from "./routes/messageRoutes.js";
+import applicationRoutes from "./routes/applicationRoutes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 dotenv.config();
@@ -26,6 +28,7 @@ app.use(express.urlencoded({ limit: "20mb", extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
+
 // Connect to MongoDB
 connectDB();
 
@@ -40,7 +43,9 @@ app.use("/api/resume", resumeRoutes);
 app.use('/api/jobseeker/profile', profileRoutes);
 app.use("/api/jobs", jobRoutes);
 //app.use("/api/applications", applicationRoutes);
+app.use("/api/messages", messageRoutes);
 
+app.use("/api/applications", applicationRoutes);
 app.use("/api/companies", companyRoutes);
 
 

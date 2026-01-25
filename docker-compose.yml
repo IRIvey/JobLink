@@ -10,6 +10,8 @@ services:
       - /app/node_modules
     environment:
       - VITE_API_URL=http://localhost:5001
+      - CHOKIDAR_USEPOLLING=true
+      - CHOKIDAR_INTERVAL=1000
     depends_on:
       - server
     stdin_open: true
@@ -28,3 +30,15 @@ services:
       - ./server/.env
     environment:
       - NODE_ENV=development
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:

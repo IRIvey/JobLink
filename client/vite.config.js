@@ -1,22 +1,32 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: '0.0.0.0', // Listen on all network interfaces
+    host: "0.0.0.0",
     port: 5173,
+
     watch: {
-      usePolling: true, // Important for Docker volumes
+      usePolling: true,
+      interval: 1000,
+      // ✅ ignore more folders that waste RAM in Docker/WSL
+      ignored: [
+        "**/node_modules/**",
+        "**/.git/**",
+        "**/dist/**",
+        "**/build/**",
+        "**/.cache/**",
+        "**/.vite/**",
+      ],
     },
+
     proxy: {
-      '/api': {
-        target: 'http://server:5001', // Use Docker service name
+      "/api": {
+        target: "http://server:5001",
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path,
-      }
-    }
-  }
-})
+      },
+    },
+  },
+});
