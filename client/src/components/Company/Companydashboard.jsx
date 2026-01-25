@@ -224,19 +224,19 @@ const fetchJobs = async () => {
       </nav>
 
       {/* Layout */}
-      <div className="max-w-7xl mx-auto px-6 pt-24 flex gap-6">
-        {/* Left Sidebar */}
-        <aside className="w-64 flex-shrink-0">
-          <div className="bg-white rounded-xl shadow-sm p-4 space-y-1 sticky top-24">
+      <div className="mx-auto px-6 pt-24 flex gap-5" style={{ maxWidth: '1900px' }}>
+        {/* Left Sidebar - Slightly larger */}
+        <aside className="w-56 flex-shrink-0">
+          <div className="bg-white rounded-xl shadow-sm p-3 space-y-1 sticky top-24">
             {navigation.map((item) => {
               const Icon = item.icon;
               return (
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-sm ${
                     activeTab === item.id
-                      ? "bg-indigo-50 text-indigo-600"
+                      ? "bg-indigo-50 text-indigo-600 font-medium"
                       : "text-gray-700 hover:bg-gray-50"
                   }`}
                 >
@@ -248,8 +248,8 @@ const fetchJobs = async () => {
           </div>
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 space-y-6">
+        {/* Main Content - Maximum space */}
+        <main className="flex-1 space-y-6 min-w-0">
           {/* ✅ Quick Stats only in home */}
           {activeTab === "home" && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
@@ -280,33 +280,33 @@ const fetchJobs = async () => {
           {renderContent()}
         </main>
 
-        {/* Right Sidebar */}
-        <aside className="w-80 flex-shrink-0">
+        {/* Right Sidebar - Larger */}
+        <aside className="w-64 flex-shrink-0">
           <div className="space-y-4 sticky top-24">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+              <h3 className="font-bold text-gray-900 mb-4 text-lg">
                 Profile Strength
               </h3>
-              <div className="mb-3">
-                <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="mb-4">
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
                   <div
-                    className="bg-indigo-600 h-2 rounded-full"
+                    className="bg-indigo-600 h-2.5 rounded-full"
                     style={{ width: "60%" }}
                   ></div>
                 </div>
-                <p className="text-sm text-gray-600 mt-2">60% Complete</p>
+                <p className="text-base text-gray-600 mt-2 font-medium">60% Complete</p>
               </div>
-              <ul className="space-y-2 text-sm">
+              <ul className="space-y-2.5 text-base">
                 <li className="flex items-center gap-2 text-gray-600">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <div className="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
                   Email verified
                 </li>
                 <li className="flex items-center gap-2 text-gray-600">
-                  <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                  <div className="w-2.5 h-2.5 bg-gray-300 rounded-full"></div>
                   Add skills
                 </li>
                 <li className="flex items-center gap-2 text-gray-600">
-                  <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                  <div className="w-2.5 h-2.5 bg-gray-300 rounded-full"></div>
                   Upload resume
                 </li>
               </ul>
@@ -318,18 +318,17 @@ const fetchJobs = async () => {
   );
 };
 
-// ✅ Stat Box (same as yours)
+// ✅ Stat Box with larger text
 const StatBox = ({ icon: Icon, label, value, color, textColor }) => (
-  <div className="bg-white rounded-xl shadow-sm p-5 flex items-center gap-4">
-    <div className={`${color} p-3 rounded-lg`}>
-      <Icon className={textColor} size={22} />
+  <div className="bg-white rounded-xl shadow-sm p-6 flex items-center gap-4">
+    <div className={`${color} p-4 rounded-lg`}>
+      <Icon className={textColor} size={28} />
     </div>
     <div>
-      <p className="text-sm text-gray-500">{label}</p>
-      <p className="text-xl font-semibold">{value}</p>
+      <p className="text-base text-gray-500 font-medium">{label}</p>
+      <p className="text-3xl font-bold">{value}</p>
     </div>
   </div>
 );
 
 export default CompanyDashboard;
-
