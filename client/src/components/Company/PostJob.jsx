@@ -52,7 +52,20 @@ const PostJob = () => {
     setLoading(true);
     setMessage("");
 
-    try {
+    
+     if (!description.trim()) {
+    setMessage("Job description is required");
+    setLoading(false);
+    return;
+  }
+
+  if (!title.trim()) {
+    setMessage("Job title is required");
+    setLoading(false);
+    return;
+  }
+
+  try {
       const res = await axios.post(
         'http://localhost:5001/api/companies/jobs', // <-- your backend route
         {
