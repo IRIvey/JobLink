@@ -237,6 +237,26 @@ export const createJob = async (req, res) => {
       skills = skills.filter((s) => (INDUSTRY_SKILLS[industry] || []).includes(s));
     }
 
+  
+    let salaryInput = req.body.salary;
+    let salary = { min: 0, max: 0, currency: "USD" };
+
+    if (salaryInput) {
+      const numbers = salaryInput
+        .replace(/\$/g, "")
+        .replace(/k/gi, "000")
+        .split("-")
+        .map(s => Number(s.trim()));
+
+      if (numbers.length === 1) {
+        salary.min = numbers[0];
+        salary.max = numbers[0];
+      } else if (numbers.length === 2) {
+        salary.min = numbers[0];
+        salary.max = numbers[1];
+      }
+    }
+
     const job = await Job.create({
       company: companyId,
       title: req.body.title,
@@ -244,7 +264,7 @@ export const createJob = async (req, res) => {
       location: company.location,
       type: req.body.type,
       experience: req.body.experience,
-      salary: req.body.salary,
+      salary: salary, 
       skills,
       status: "active",
     });
@@ -281,4 +301,26 @@ export const getJobSkillsForCompany = async (req, res) => {
   }
 };
 
+export const getCompanyJobs = async (req, res) => {
+  try {
+    const companyId = req.user?.id;
+    if (!companyId || req.user.userType !== "company")
+      return res.status(401).json({ message: "Unauthorized" });
 
+    const jobs = await Job.find({ company: companyId })
+      .sort({ postedDate: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: jobs.length,
+      jobs
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch jobs",
+      error: error.message
+    });
+  }
+};
