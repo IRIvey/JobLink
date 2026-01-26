@@ -98,7 +98,7 @@ export const uploadCompanyCoverPhoto = async (req, res) => {
   }
 };
 
-// --- Certificates ---
+// --- Add Certificate ---
 export const addCompanyCertificate = async (req, res) => {
   try {
     const companyId = req.user?.id;
@@ -108,13 +108,20 @@ export const addCompanyCertificate = async (req, res) => {
     const company = await Company.findById(companyId);
     if (!company) return res.status(404).json({ message: "Company not found" });
 
-    const { name, fileUrl, fileType } = req.body;
+    const { name, fileUrl, fileType, awardedBy, awardedDate } = req.body;
+
     if (!name || !fileUrl || !fileType)
       return res.status(400).json({ message: "name, fileUrl & fileType are required" });
 
-    company.certificates.unshift({ name, fileUrl, fileType });
-    await company.save();
+    company.certificates.unshift({
+      name: name.trim(),
+      fileUrl: fileUrl.trim(),
+      fileType,
+      awardedBy: awardedBy?.trim() || "",
+      awardedDate: awardedDate ? new Date(awardedDate) : null,
+    });
 
+    await company.save();
     res.status(201).json({ success: true, certificates: company.certificates });
   } catch (err) {
     console.error("addCompanyCertificate error:", err);
@@ -122,6 +129,7 @@ export const addCompanyCertificate = async (req, res) => {
   }
 };
 
+// --- Delete Certificate ---
 export const deleteCompanyCertificate = async (req, res) => {
   try {
     const companyId = req.user?.id;
@@ -144,7 +152,7 @@ export const deleteCompanyCertificate = async (req, res) => {
   }
 };
 
-// --- Licenses ---
+// --- Add License ---
 export const addCompanyLicense = async (req, res) => {
   try {
     const companyId = req.user?.id;
@@ -154,20 +162,32 @@ export const addCompanyLicense = async (req, res) => {
     const company = await Company.findById(companyId);
     if (!company) return res.status(404).json({ message: "Company not found" });
 
-    const license = {
-      name: req.body.name,
-      licenseNumber: req.body.licenseNumber,
-      issuedBy: req.body.issuedBy,
-      fileUrl: req.body.fileUrl,
-      fileType: req.body.fileType,
-      status: req.body.status || "Active",
-    };
+    const {
+      name,
+      licenseNumber,
+      issuedBy,
+      fileUrl,
+      fileType,
+      status,
+      issueDate,
+      expiryDate,
+    } = req.body;
 
-    if (!license.name) return res.status(400).json({ message: "License name required" });
+    if (!name || !issueDate)
+      return res.status(400).json({ message: "License name and issueDate are required" });
 
-    company.licenses.unshift(license);
+    company.licenses.unshift({
+      name: name.trim(),
+      licenseNumber: licenseNumber?.trim() || "",
+      issuedBy: issuedBy?.trim() || "",
+      fileUrl: fileUrl?.trim() || "",
+      fileType: fileType || "",
+      status: status || "Active",
+      issueDate: new Date(issueDate),
+      expiryDate: expiryDate ? new Date(expiryDate) : null,
+    });
+
     await company.save();
-
     res.status(201).json({ success: true, licenses: company.licenses });
   } catch (err) {
     console.error("addCompanyLicense error:", err);
@@ -175,6 +195,7 @@ export const addCompanyLicense = async (req, res) => {
   }
 };
 
+// --- Delete License ---
 export const deleteCompanyLicense = async (req, res) => {
   try {
     const companyId = req.user?.id;
@@ -259,3 +280,5 @@ export const getJobSkillsForCompany = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to fetch skills", error: err.message });
   }
 };
+
+

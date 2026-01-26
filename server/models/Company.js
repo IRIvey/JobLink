@@ -82,21 +82,26 @@ certificates: [
   {
     name: {
       type: String,
+      required: true,
       trim: true,
     },
-    fileUrl: {
+    link: {
       type: String,
-      required: true,
+      required: true,   // link to view the certificate
     },
-    fileType: {
+    awardedBy: {
       type: String,
-      enum: ["pdf", "jpg", "jpeg"],
-      required: true,
+      required: true,   // e.g., "Coursera", "University of XYZ"
+      trim: true,
     },
-    uploadedAt: {
+    awardedDate: {
+      type: Date,
+      required: true,   // e.g., "2024-05-10"
+    },
+    createdAt: {
       type: Date,
       default: Date.now,
-    }
+    },
   }
 ],
 
@@ -115,19 +120,33 @@ licenses: [
       type: String,
       trim: true,
     },
-    fileUrl: {            
+
+    fileUrl: {   // link to PDF/JPG etc
       type: String,
       trim: true,
     },
-    fileType: {            
+
+    fileType: { // optional but useful for preview logic
       type: String,
       enum: ["pdf", "jpg", "jpeg"],
     },
+
+    // NEW FIELDS
+    issueDate: {
+      type: Date,
+      required: true,
+    },
+    expiryDate: {
+      type: Date,
+      required: false, // some licenses don't expire
+    },
+
     status: {              
       type: String,
       enum: ["Active", "Expired", "Pending"],
       default: "Active",
     },
+
     createdAt: {          
       type: Date,
       default: Date.now,
