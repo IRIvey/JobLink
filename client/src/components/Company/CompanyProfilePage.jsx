@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Briefcase, 
   Mail, 
@@ -13,46 +13,45 @@ import {
 } from 'lucide-react';
 
 const INDUSTRIES = [
-  "IT",
-  "Finance",
-  "Healthcare",
-  "Education",
-  "Manufacturing",
-  "Retail",
-  "Real Estate",
-  "Telecommunications",
-  "Transportation",
-  "Media",
-  "Agriculture",
-  "Pharmaceuticals",
-  "Construction",
-  "Government",
-  "Consulting",
-  "Other"
+  "IT","Finance","Healthcare","Education","Manufacturing","Retail",
+  "Real Estate","Telecommunications","Transportation","Media",
+  "Agriculture","Pharmaceuticals","Construction","Government",
+  "Consulting","Other"
 ];
 
 const CompanyProfile = ({ companyData, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
+
+  // ✅ Use local state to manage changes and instant preview
+  const [localCompanyData, setLocalCompanyData] = useState(companyData || {});
+
   const [formData, setFormData] = useState({
-    name: '',
+    companyName: '',
     email: '',
     location: '',
-    website: '',
+    website: '', 
     description: '',
     industry: '',
-    employees: '',
+    totalEmployees: '',
   });
+
+  const profileInputRef = useRef(null);
+  const coverInputRef = useRef(null);
+
+  const token = localStorage.getItem('token');
+  const API_BASE = "http://localhost:5001/api/companies/profile";
 
   useEffect(() => {
     if (companyData) {
+      setLocalCompanyData(companyData);
       setFormData({
-        name: companyData.companyName || '',
+        companyName: companyData.companyName || '',
         email: companyData.email || '',
         location: companyData.location || '',
         website: companyData.website || '',
         description: companyData.description || '',
         industry: companyData.industry || '',
-        employees: companyData.totalEmployees || '',
+        totalEmployees: companyData.totalEmployees || '',
       });
     }
   }, [companyData]);
@@ -63,88 +62,152 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
 
   const handleSave = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5001/api/companies/profile', {
+      const response = await fetch(API_BASE, {
         method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json', 
-          Authorization: `Bearer ${token}` 
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(formData)
       });
 
       if (response.ok) {
         setIsEditing(false);
-        if (onUpdate) onUpdate();
+        onUpdate?.();
+      } else {
+        console.error("Update failed:", await response.text());
       }
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error("Error updating profile:", error);
     }
   };
 
   const handleCancel = () => {
     if (companyData) {
       setFormData({
-        name: companyData.companyName || '',
+        companyName: companyData.companyName || '',
         email: companyData.email || '',
         location: companyData.location || '',
         website: companyData.website || '',
         description: companyData.description || '',
         industry: companyData.industry || '',
-        employees: companyData.totalEmployees || '',
+        totalEmployees: companyData.totalEmployees || '',
       });
     }
     setIsEditing(false);
   };
 
+  // ✅ Photo upload with instant preview
+  const handlePhotoUpload = async (e, type) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("File is too large. Max 2MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const response = await fetch(
+          `${API_BASE}/${type === "profile" ? "profile-photo" : "cover-photo"}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ image: reader.result }),
+          }
+        );
+
+        if (!response.ok) {
+          const text = await response.text();
+          console.error("Upload failed:", response.status, text);
+          return;
+        }
+
+        // ✅ Update local state instantly
+        const updatedImage = reader.result;
+        setLocalCompanyData((prev) => ({
+          ...prev,
+          [type === "profile" ? "profilePhoto" : "coverPhoto"]: updatedImage,
+        }));
+
+        onUpdate?.(); // optional parent refresh
+      } catch (err) {
+        console.error("Upload failed", err);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Cover & Profile Header */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="h-48 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 relative">
-          {isEditing && (
-            <button className="absolute top-4 right-4 px-4 py-2 bg-white/90 backdrop-blur-sm text-gray-700 rounded-lg hover:bg-white flex items-center gap-2 shadow-lg">
-              <Camera size={16} /> Change Cover
-            </button>
+      
+      {/* File Inputs */}
+      <input type="file" ref={profileInputRef} className="hidden" accept="image/*"
+        onChange={(e) => handlePhotoUpload(e, 'profile')} />
+      <input type="file" ref={coverInputRef} className="hidden" accept="image/*"
+        onChange={(e) => handlePhotoUpload(e, 'cover')} />
+
+      {/* Cover + Profile + Name + BIO Combined */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden relative">
+        <div className="h-48 bg-gray-100 relative">
+          {localCompanyData?.coverPhoto ? (
+            <img src={localCompanyData.coverPhoto} alt="Cover" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
           )}
+          <button
+            className="absolute top-4 right-4 p-2 bg-white/90 rounded-lg hover:bg-white shadow-lg flex items-center gap-1"
+            onClick={() => coverInputRef.current?.click()}
+          >
+            <Camera size={16} />
+          </button>
         </div>
 
-        <div className="px-8 pb-8 -mt-20 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+        <div className="px-8 pb-6 -mt-20 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
           <div className="flex flex-col md:flex-row gap-6 items-start md:items-end">
-            {/* Profile Picture */}
+            {/* Profile Photo */}
             <div className="relative">
-              <div className="w-40 h-40 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center text-white text-5xl font-bold shadow-2xl border-4 border-white">
-                {formData.name?.[0]?.toUpperCase() || 'C'}
+              <div className="w-40 h-40 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-5xl font-bold shadow-2xl border-4 border-white overflow-hidden">
+                {localCompanyData?.profilePhoto ? (
+                  <img src={localCompanyData.profilePhoto} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  formData.companyName?.[0]?.toUpperCase() || "C"
+                )}
               </div>
-              {isEditing && (
-                <button className="absolute bottom-2 right-2 p-2 bg-white rounded-full shadow-lg hover:bg-gray-50 border border-gray-200">
-                  <Camera size={18} className="text-gray-700" />
-                </button>
-              )}
+              <button
+                className="absolute bottom-2 right-2 p-2 bg-white rounded-full shadow-lg border border-gray-200"
+                onClick={() => profileInputRef.current?.click()}
+              >
+                <Camera size={18} className="text-gray-700" />
+              </button>
             </div>
 
-            {/* Company Info */}
-            <div>
+            {/* Company Name */}
+            <div className="flex-1">
               {isEditing ? (
                 <input
                   type="text"
-                  name="name"
-                  value={formData.name}
+                  name="companyName"
+                  value={formData.companyName}
                   onChange={handleInputChange}
                   placeholder="Company Name"
-                  className="text-3xl font-bold text-gray-900 border-b-2 border-gray-200 focus:border-indigo-500"
+                  className="text-3xl font-bold text-gray-900 border-b-2 border-gray-200 focus:border-indigo-500 w-full"
                 />
               ) : (
-                <h1 className="text-3xl font-bold text-gray-900">{formData.name}</h1>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {formData.companyName || "Add Company Name"}
+                </h1>
               )}
-              <p className="text-gray-700 mt-2">
-                {formData.description || 'Add a company description'}
-              </p>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3">
+          {/* Buttons */}
+          <div className="flex gap-3 mt-4 md:mt-0">
             {!isEditing ? (
               <button
                 onClick={() => setIsEditing(true)}
@@ -158,26 +221,46 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
                   onClick={handleCancel}
                   className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all"
                 >
-                  <X size={18} /> Cancel
+                  <X size={14} /> Cancel
                 </button>
                 <button
                   onClick={handleSave}
                   className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 shadow-lg hover:shadow-xl transition-all"
                 >
-                  <Save size={18} /> Save Changes
+                  <Save size={14} /> Save 
                 </button>
               </>
             )}
           </div>
+        </div>
+
+        {/* BIO INSERTED BELOW NAME */}
+        <div className="px-8 pb-8">
+          {isEditing ? (
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              rows={4}
+              placeholder="Write something about your company..."
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+            />
+          ) : (
+            <p className="text-gray-700 text-base leading-relaxed whitespace-pre-line">
+              {formData.description?.trim()
+                ? formData.description
+                : "No company bio added yet."}
+            </p>
+          )}
         </div>
       </div>
 
       {/* Contact & Info */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 space-y-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Contact & Info</h2>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {['email', 'location', 'website', 'industry', 'employees'].map((field) => (
+          {['email', 'location', 'website', 'industry', 'totalEmployees']
+            .map((field) => (
             <div key={field}>
               <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                 {field === 'email' && <Mail size={16} />}
@@ -219,61 +302,8 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
         </div>
       </div>
 
-        {/* Awards */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
-        <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-                <Briefcase className="text-blue-600" size={24} />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900">Awards</h2>
-            </div>
-            <span className="px-4 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
-            {companyData?.awards?.length || 0} awards
-            </span>
-        </div>
-
-        <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-            <Briefcase className="mx-auto text-gray-400 mb-3" size={48} />
-            <p className="text-gray-500 font-medium">No awards added</p>
-            <p className="text-gray-400 text-sm mt-1">
-            Showcase your company achievements
-            </p>
-            <button className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2 mx-auto">
-            <Plus size={16} /> Add Award
-            </button>
-        </div>
-        </div>
-
-        {/* Licenses */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
-        <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-                <Briefcase className="text-blue-600" size={24} />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900">Licenses</h2>
-            </div>
-            <span className="px-4 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
-            {companyData?.licenses?.length || 0} licenses
-            </span>
-        </div>
-
-        <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-            <Briefcase className="mx-auto text-gray-400 mb-3" size={48} />
-            <p className="text-gray-500 font-medium">No licenses added</p>
-            <p className="text-gray-400 text-sm mt-1">
-            Add official licenses or certifications
-            </p>
-            <button className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2 mx-auto">
-            <Plus size={16} /> Add License
-            </button>
-        </div>
-        </div>
     </div>
   );
-
-  
 };
 
 export default CompanyProfile;
