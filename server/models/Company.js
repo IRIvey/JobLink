@@ -141,12 +141,6 @@ licenses: [
       required: false, // some licenses don't expire
     },
 
-    status: {              
-      type: String,
-      enum: ["Active", "Expired", "Pending"],
-      default: "Active",
-    },
-
     createdAt: {          
       type: Date,
       default: Date.now,

@@ -108,17 +108,17 @@ export const addCompanyCertificate = async (req, res) => {
     const company = await Company.findById(companyId);
     if (!company) return res.status(404).json({ message: "Company not found" });
 
-    const { name, fileUrl, fileType, awardedBy, awardedDate } = req.body;
+    const { name, link, awardedBy, awardedDate } = req.body;
 
-    if (!name || !fileUrl || !fileType)
-      return res.status(400).json({ message: "name, fileUrl & fileType are required" });
+    // Validation
+    if (!name || !link || !awardedBy || !awardedDate)
+      return res.status(400).json({ message: "name, link, awardedBy & awardedDate are required" });
 
     company.certificates.unshift({
       name: name.trim(),
-      fileUrl: fileUrl.trim(),
-      fileType,
-      awardedBy: awardedBy?.trim() || "",
-      awardedDate: awardedDate ? new Date(awardedDate) : null,
+      link: link.trim(),
+      awardedBy: awardedBy.trim(),
+      awardedDate: new Date(awardedDate),
     });
 
     await company.save();
@@ -134,6 +134,7 @@ export const deleteCompanyCertificate = async (req, res) => {
   try {
     const companyId = req.user?.id;
     const { certificateId } = req.params;
+
     if (!companyId || req.user.userType !== "company")
       return res.status(401).json({ message: "Unauthorized" });
 
@@ -162,17 +163,9 @@ export const addCompanyLicense = async (req, res) => {
     const company = await Company.findById(companyId);
     if (!company) return res.status(404).json({ message: "Company not found" });
 
-    const {
-      name,
-      licenseNumber,
-      issuedBy,
-      fileUrl,
-      fileType,
-      status,
-      issueDate,
-      expiryDate,
-    } = req.body;
+    const { name, licenseNumber, issuedBy, fileUrl, fileType, issueDate, expiryDate } = req.body;
 
+    // Validation
     if (!name || !issueDate)
       return res.status(400).json({ message: "License name and issueDate are required" });
 
@@ -182,7 +175,6 @@ export const addCompanyLicense = async (req, res) => {
       issuedBy: issuedBy?.trim() || "",
       fileUrl: fileUrl?.trim() || "",
       fileType: fileType || "",
-      status: status || "Active",
       issueDate: new Date(issueDate),
       expiryDate: expiryDate ? new Date(expiryDate) : null,
     });
@@ -200,6 +192,7 @@ export const deleteCompanyLicense = async (req, res) => {
   try {
     const companyId = req.user?.id;
     const { licenseId } = req.params;
+
     if (!companyId || req.user.userType !== "company")
       return res.status(401).json({ message: "Unauthorized" });
 
