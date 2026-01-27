@@ -324,3 +324,77 @@ export const getCompanyJobs = async (req, res) => {
     });
   }
 };
+
+// Update job status (active/closed)
+export const updateJobStatus = async (req, res) => {
+  try {
+    const companyId = req.user?.id;
+    const { jobId } = req.params;
+    const { status } = req.body;
+
+    if (!companyId || req.user.userType !== "company")
+      return res.status(401).json({ message: "Unauthorized" });
+
+    // Validate status
+    if (!["active", "closed"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    const job = await Job.findOneAndUpdate(
+      { _id: jobId, company: companyId },
+      { status },
+      { new: true }
+    );
+
+    if (!job) return res.status(404).json({ message: "Job not found" });
+
+    res.status(200).json({ success: true, job });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to update job status" });
+  }
+};
+
+// Update job details
+export const updateJob = async (req, res) => {
+  try {
+    const companyId = req.user?.id;
+    const { jobId } = req.params;
+
+    if (!companyId || req.user.userType !== "company")
+      return res.status(401).json({ message: "Unauthorized" });
+
+    const job = await Job.findOneAndUpdate(
+      { _id: jobId, company: companyId },
+      { $set: req.body },
+      { new: true, runValidators: true }
+    );
+
+    if (!job) return res.status(404).json({ message: "Job not found" });
+
+    res.status(200).json({ success: true, job });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to update job" });
+  }
+};
+
+// Delete job
+export const deleteJob = async (req, res) => {
+  try {
+    const companyId = req.user?.id;
+    const { jobId } = req.params;
+
+    if (!companyId || req.user.userType !== "company")
+      return res.status(401).json({ message: "Unauthorized" });
+
+    const job = await Job.findOneAndDelete({ _id: jobId, company: companyId });
+
+    if (!job) return res.status(404).json({ message: "Job not found" });
+
+    res.status(200).json({ success: true, message: "Job deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to delete job" });
+  }
+};
