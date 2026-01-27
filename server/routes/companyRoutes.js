@@ -10,7 +10,10 @@ import {
   deleteCompanyCertificate,
   addCompanyLicense,
   deleteCompanyLicense,
-  getCompanyJobs
+  getCompanyJobs,
+  updateJobStatus,
+  updateJob,
+  deleteJob
 } from "../controllers/companyController.js";
 import { protect, authorizeRoles } from "../middleware/authMiddleware.js";
 import { upload } from "../middleware/upload.js"; // Multer middleware
@@ -51,4 +54,9 @@ router.delete("/profile/licenses/:licenseId", protect, authorizeRoles("company")
 router.post("/jobs", protect, authorizeRoles("company"), createJob);
 router.get("/skills", protect, authorizeRoles("company"), getJobSkillsForCompany);
 router.get("/jobs", protect, authorizeRoles("company"), getCompanyJobs);
+
+
+router.patch("/jobs/:jobId/status", protect, authorizeRoles("company"), updateJobStatus);
+router.put("/jobs/:jobId", protect, authorizeRoles("company"), updateJob);
+router.delete("/jobs/:jobId", protect, authorizeRoles("company"), deleteJob);
 export default router;
