@@ -163,7 +163,7 @@ export const addCompanyLicense = async (req, res) => {
     const company = await Company.findById(companyId);
     if (!company) return res.status(404).json({ message: "Company not found" });
 
-    const { name, licenseNumber, issuedBy, fileUrl, fileType, issueDate, expiryDate } = req.body;
+    const { name, licenseNumber, issuedBy, fileUrl, issueDate, expiryDate } = req.body;
 
     // Validation
     if (!name || !issueDate)
@@ -174,7 +174,6 @@ export const addCompanyLicense = async (req, res) => {
       licenseNumber: licenseNumber?.trim() || "",
       issuedBy: issuedBy?.trim() || "",
       fileUrl: fileUrl?.trim() || "",
-      fileType: fileType || "",
       issueDate: new Date(issueDate),
       expiryDate: expiryDate ? new Date(expiryDate) : null,
     });

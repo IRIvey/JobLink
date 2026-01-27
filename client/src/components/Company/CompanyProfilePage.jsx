@@ -62,6 +62,28 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // const handleSave = async () => {
+  //   try {
+  //     const response = await fetch(API_BASE, {
+  //       method: 'PUT',
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //         'Content-Type': 'application/json'
+  //       },
+  //       body: JSON.stringify(formData)
+  //     });
+
+  //     if (response.ok) {
+  //       setIsEditing(false);
+  //       onUpdate?.();
+  //     } else {
+  //       console.error("Update failed:", await response.text());
+  //     }
+  //   } catch (error) {
+  //     console.error("Error updating profile:", error);
+  //   }
+  // };
+
   const handleSave = async () => {
     try {
       const response = await fetch(API_BASE, {
@@ -144,6 +166,24 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
   };
 
   const handleAddCompanyItem = async (path) => {
+  const today = new Date().toISOString().split("T")[0]; // current date in YYYY-MM-DD
+
+  // --- Validation ---
+  if (path === "certificates") {
+    if (!itemForm.name) return alert("Certificate name is required");
+    if (!itemForm.awardedDate) return alert("Awarded date is required");
+    if (itemForm.awardedDate > today) return alert("Awarded date cannot exceed today");
+  }
+
+  if (path === "licenses") {
+    if (!itemForm.name) return alert("License name is required");
+    if (!itemForm.licenseNumber) return alert("License number is required");
+    if (!itemForm.issueDate) return alert("Issue date is required");
+    if (!itemForm.expiryDate) return alert("Expiry date is required");
+    if (itemForm.issueDate > today) return alert("Issue date cannot exceed today");;
+    if (itemForm.issueDate > itemForm.expiryDate) return alert("Issue date must be before expiry date");
+  }
+
   try {
     const response = await fetch(`${API_BASE}/${path}`, {
       method: "POST",
@@ -175,6 +215,7 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
   }
 };
 
+
   const handleDeleteCompanyItem = async (path, id) => {
   if (!window.confirm("Are you sure?")) return;
 
@@ -203,60 +244,88 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
   }
 };
 
-
   const renderModalForm = () => {
-    if (!showModal) return null;
+  if (!showModal) return null;
 
-    return (
+  const today = new Date().toISOString().split("T")[0]; // Current date in YYYY-MM-DD
+
+  const handleSaveClick = () => {
+    // Certificate Validation
+    if (showModal === "certificates") {
+      if (!itemForm.name || !itemForm.awardedBy || !itemForm.awardedDate) {
+        alert("Please fill all required fields.");
+        return;
+      }
+      if (itemForm.awardedDate > today) {
+        alert("Awarded date cannot be in the future!");
+        return;
+      }
+    }
+
+    // License Validation
+    if (showModal === "licenses") {
+      if (!itemForm.name || !itemForm.issuedBy || !itemForm.issueDate || !itemForm.expiryDate) {
+        alert("Please fill all required fields.");
+        return;
+      }
+      if (itemForm.issueDate > today) {
+        alert("Issue date cannot be in the future!");
+        return;
+      }
+      if (itemForm.issueDate >= itemForm.expiryDate) {
+        alert("Issue date must be earlier than expiry date!");
+        return;
+      }
+    }
+
+    handleAddCompanyItem(showModal === "certificates" ? "certificates" : "licenses");
+  };
+
+  return (
+    <div
+      onClick={() => { setShowModal(null); setItemForm({}); }}
+      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+    >
       <div
-        onClick={() => { setShowModal(null); setItemForm({}); }}
-        className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-xl shadow-lg p-6 w-96 space-y-4"
       >
-        <div
-          onClick={(e) => e.stopPropagation()}
-          className="bg-white rounded-xl shadow-lg p-6 w-96 space-y-4"
-        >
-          <h3 className="text-lg font-semibold">
-            Add {showModal === "certificates" ? "Certificate" : "License"}
-          </h3>
+        <h3 className="text-lg font-semibold">
+          Add {showModal === "certificates" ? "Certificate" : "License"}
+        </h3>
 
-          {showModal === "certificates" && (
-            <>
-              <input type="text" maxLength={50} placeholder="Name" className="w-full border p-2 rounded" value={itemForm.name || ""} onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} />
-              <input type="text" maxLength={100} placeholder="Link" className="w-full border p-2 rounded" value={itemForm.link || ""} onChange={(e) => setItemForm({ ...itemForm, link: e.target.value })} />
-              <input type="text" maxLength={50} placeholder="Awarded By" className="w-full border p-2 rounded" value={itemForm.awardedBy || ""} onChange={(e) => setItemForm({ ...itemForm, awardedBy: e.target.value })} />
-              <label className="text-sm text-gray-600">Awarded Date</label>
-              <input type="date" className="w-full border p-2 rounded" value={itemForm.awardedDate || ""} onChange={(e) => setItemForm({ ...itemForm, awardedDate: e.target.value })} />
-            </>
-          )}
+        {showModal === "certificates" && (
+          <>
+            <input type="text" maxLength={50} placeholder="Name" className="w-full border p-2 rounded" value={itemForm.name || ""} onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} />
+            <input type="text" maxLength={100} placeholder="Link" className="w-full border p-2 rounded" value={itemForm.link || ""} onChange={(e) => setItemForm({ ...itemForm, link: e.target.value })} />
+            <input type="text" maxLength={50} placeholder="Awarded By" className="w-full border p-2 rounded" value={itemForm.awardedBy || ""} onChange={(e) => setItemForm({ ...itemForm, awardedBy: e.target.value })} />
+            <label className="text-sm text-gray-600">Awarded Date</label>
+            <input type="date" max={today} className="w-full border p-2 rounded" value={itemForm.awardedDate || ""} onChange={(e) => setItemForm({ ...itemForm, awardedDate: e.target.value })} />
+          </>
+        )}
 
-          {showModal === "licenses" && (
-            <>
-              <input type="text" maxLength={50} placeholder="Name" className="w-full border p-2 rounded" value={itemForm.name || ""} onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} />
-              <input type="text" maxLength={50} placeholder="License Number" className="w-full border p-2 rounded" value={itemForm.licenseNumber || ""} onChange={(e) => setItemForm({ ...itemForm, licenseNumber: e.target.value })} />
-              <input type="text" maxLength={50} placeholder="Issued By" className="w-full border p-2 rounded" value={itemForm.issuedBy || ""} onChange={(e) => setItemForm({ ...itemForm, issuedBy: e.target.value })} />
-              <input type="text" maxLength={200} placeholder="File URL" className="w-full border p-2 rounded" value={itemForm.fileUrl || ""} onChange={(e) => setItemForm({ ...itemForm, fileUrl: e.target.value })} />
-              <select className="w-full border p-2 rounded" value={itemForm.fileType || ""} onChange={(e) => setItemForm({ ...itemForm, fileType: e.target.value })}>
-                <option value="">Select File Type</option>
-                <option value="pdf">PDF</option>
-                <option value="jpg">JPG</option>
-                <option value="jpeg">JPEG</option>
-              </select>
-              <label className="text-sm text-gray-600">Issue Date</label>
-              <input type="date" className="w-full border p-2 rounded" value={itemForm.issueDate || ""} onChange={(e) => setItemForm({ ...itemForm, issueDate: e.target.value })} />
-              <label className="text-sm text-gray-600">Expiry Date</label>
-              <input type="date" className="w-full border p-2 rounded" value={itemForm.expiryDate || ""} onChange={(e) => setItemForm({ ...itemForm, expiryDate: e.target.value })} />
-            </>
-          )}
+        {showModal === "licenses" && (
+          <>
+            <input type="text" maxLength={50} placeholder="Name" className="w-full border p-2 rounded" value={itemForm.name || ""} onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} />
+            <input type="text" maxLength={50} placeholder="License Number" className="w-full border p-2 rounded" value={itemForm.licenseNumber || ""} onChange={(e) => setItemForm({ ...itemForm, licenseNumber: e.target.value })} />
+            <input type="text" maxLength={50} placeholder="Issued By" className="w-full border p-2 rounded" value={itemForm.issuedBy || ""} onChange={(e) => setItemForm({ ...itemForm, issuedBy: e.target.value })} />
+            <input type="text" maxLength={200} placeholder="File URL" className="w-full border p-2 rounded" value={itemForm.fileUrl || ""} onChange={(e) => setItemForm({ ...itemForm, fileUrl: e.target.value })} />
+            <label className="text-sm text-gray-600">Issue Date</label>
+            <input type="date" max={today} className="w-full border p-2 rounded" value={itemForm.issueDate || ""} onChange={(e) => setItemForm({ ...itemForm, issueDate: e.target.value })} />
+            <label className="text-sm text-gray-600">Expiry Date</label>
+            <input type="date" className="w-full border p-2 rounded" value={itemForm.expiryDate || ""} onChange={(e) => setItemForm({ ...itemForm, expiryDate: e.target.value })} />
+          </>
+        )}
 
-          <div className="flex justify-end gap-3 pt-2">
-            <button className="px-4 py-2 rounded border" onClick={() => { setShowModal(null); setItemForm({}); }}>Cancel</button>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={() => handleAddCompanyItem(showModal === "certificates" ? "certificates" : "licenses")}>Save</button>
-          </div>
+        <div className="flex justify-end gap-3 pt-2">
+          <button className="px-4 py-2 rounded border" onClick={() => { setShowModal(null); setItemForm({}); }}>Cancel</button>
+          <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={handleSaveClick}>Save</button>
         </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
+
 
   if (!localCompanyData) return <p>Loading company data...</p>;
 
@@ -323,7 +392,7 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
 
         <div className="px-8 pb-8">
           {isEditing ? (
-            <textarea maxLength={300} name="description" value={formData.description} onChange={handleInputChange} rows={4} placeholder="Write something about your company..." className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none" />
+            <textarea maxLength={1000} name="description" value={formData.description} onChange={handleInputChange} rows={4} placeholder="Write something about your company..." className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none" />
           ) : (
             <p className="text-gray-700 text-base leading-relaxed whitespace-pre-line">{formData.description?.trim() ? formData.description : "No company bio added yet."}</p>
           )}
@@ -462,7 +531,7 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
                     rel="noopener noreferrer"
                     className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1"
                   >
-                    <LinkIcon size={14} /> View File
+                    <LinkIcon size={14} /> View License
                   </a>
                 )}
 
