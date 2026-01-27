@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Select from "react-select";
 import axios from "axios";
 
-const PostJob = () => {
+const PostJob = ({ onJobPosted }) => {
   const [title, setTitle] = useState("");
   const [skillsOptions, setSkillsOptions] = useState([]);
   const [selectedSkills, setSelectedSkills] = useState([]);
@@ -82,6 +82,7 @@ const PostJob = () => {
       );
 
       setMessage("Job posted successfully!");
+      onJobPosted && onJobPosted();
       setTitle("");
       setSelectedSkills([]);
       setJobType("");

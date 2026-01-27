@@ -58,15 +58,21 @@ const CompanyDashboard = () => {
 const fetchJobs = async () => {
   try {
     const token = localStorage.getItem("token");
-    const res = await fetch("http://localhost:5001/api/companies/jobs", { // ✅ Changed URL
+    const res = await fetch("http://localhost:5001/api/companies/jobs", {
       headers: { Authorization: `Bearer ${token}` },
     });
+
+    if (!res.ok) return;
+
     const data = await res.json();
-    if (res.ok) setJobs(data.jobs || []);
+
+    // ✅ Update jobs state immediately
+    setJobs(data.jobs ?? []);
   } catch (err) {
-    console.error(err);
+    console.error("Failed to fetch jobs:", err);
   }
 };
+
 
   const fetchApplications = async () => {
     try {

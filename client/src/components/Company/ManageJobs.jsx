@@ -54,19 +54,24 @@ const ManageJobs = ({ jobs, setJobs }) => {
     }
   };
 
-  // Format date
   const formatDate = (date) => {
-    const d = new Date(date);
-    const now = new Date();
-    const diffTime = Math.abs(now - d);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return "today";
-    if (diffDays === 1) return "yesterday";
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    return `${Math.floor(diffDays / 30)} months ago`;
-  };
+  const d = new Date(date);
+  const now = new Date();
+
+  // Compare only year, month, date
+  const dDateOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const diffTime = nowDateOnly - dDateOnly;
+  const diffDays = diffTime / (1000 * 60 * 60 * 24);
+
+  if (diffDays === 0) return "today";
+  if (diffDays === 1) return "yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+  return `${Math.floor(diffDays / 30)} months ago`;
+};
+
 
   // Format salary
   const formatSalary = (salary) => {
