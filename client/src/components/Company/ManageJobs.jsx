@@ -154,9 +154,7 @@ const ManageJobs = ({ jobs, setJobs }) => {
     {job.status === "active" ? <Clock size={18} /> : <CheckCircle size={18} />}
   </button>
 
-  <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-    <Edit size={18} />
-  </button>
+ 
 
   <button 
     onClick={() => handleDeleteJob(job._id)}
