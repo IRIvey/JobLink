@@ -12,14 +12,46 @@ import {
 } from "lucide-react";
 
 const ManageJobs = ({ jobs, setJobs }) => {
-  const toggleJobStatus = (jobId) => {
-    setJobs((prev) =>
-      prev.map((job) =>
-        job._id === jobId
-          ? { ...job, status: job.status === "active" ? "closed" : "active" }
-          : job
-      )
-    );
+  const toggleJobStatus = async (jobId, currentStatus) => {
+    try {
+      const token = localStorage.getItem("token");
+      const newStatus = currentStatus === "active" ? "closed" : "active";
+
+      const res = await fetch(`http://localhost:5001/api/companies/jobs/${jobId}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (res.ok) {
+        setJobs((prev) =>
+          prev.map((job) => (job._id === jobId ? { ...job, status: newStatus } : job))
+        );
+      }
+    } catch (err) {
+      console.error("Failed to update job status:", err);
+    }
+  };
+
+  const handleDeleteJob = async (jobId) => {
+    if (!confirm("Are you sure you want to delete this job?")) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:5001/api/companies/jobs/${jobId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        setJobs((prev) => prev.filter((job) => job._id !== jobId));
+      }
+    } catch (err) {
+      console.error("Failed to delete job:", err);
+    }
   };
 
   // Format date
@@ -114,25 +146,25 @@ const ManageJobs = ({ jobs, setJobs }) => {
               </div>
 
               <div className="flex gap-2">
-                <button
-                  onClick={() => toggleJobStatus(job._id)}
-                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                  title={job.status === "active" ? "Close" : "Activate"}
-                >
-                  {job.status === "active" ? <Clock size={18} /> : <CheckCircle size={18} />}
-                </button>
+                  <button
+    onClick={() => toggleJobStatus(job._id, job.status)}
+    className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+    title={job.status === "active" ? "Close" : "Activate"}
+  >
+    {job.status === "active" ? <Clock size={18} /> : <CheckCircle size={18} />}
+  </button>
 
-                <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                  <Edit size={18} />
-                </button>
+  <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+    <Edit size={18} />
+  </button>
 
-                <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                  <Trash2 size={18} />
-                </button>
+  <button 
+    onClick={() => handleDeleteJob(job._id)}
+    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+  >
+    <Trash2 size={18} />
+  </button>
 
-                <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                  <ExternalLink size={18} />
-                </button>
               </div>
             </div>
           </div>
