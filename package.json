@@ -1,0 +1,12 @@
+{
+  "name": "joblink",
+  "version": "1.0.0",
+  "description": "- Israt Risha Ivey (220042103)\r - Zannatul Adon Sabiha (220042123)\r - Tanzia Rahman (220042129)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

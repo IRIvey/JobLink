@@ -19,6 +19,7 @@ import JobSearch from './JobSearch';
 import Applications from './Applications';  
 import SavedJobs from './SavedJobs';    
 import JobRecommendations from './JobRecommendations';
+import ChatInterface from './ChatInterface'; // Add this line
 
 
 const JobSeekerDashboard = () => {
@@ -76,22 +77,17 @@ const JobSeekerDashboard = () => {
     { id: 'profile', label: 'Profile', icon: User },
   ];
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'home':
-        return <JobRecommendations userData={userData} />;
-      case 'search':
-        return <JobSearch userData={userData} />;
-      case 'applications':
-        return <Applications userData={userData} />;
-      case 'saved':
-        return <SavedJobs userData={userData} />;
-      case 'profile':
-        return <JobSeekerProfile userData={userData} onUpdate={fetchUserData} />;
-      default:
-        return <JobRecommendations userData={userData} />;
-    }
-  };
+const renderContent = () => {
+  switch (activeTab) {
+    case 'home': return <JobRecommendations userData={userData} />;
+    case 'search': return <JobSearch userData={userData} />;
+    case 'applications': return <Applications userData={userData} />;
+    case 'saved': return <SavedJobs userData={userData} />;
+    case 'profile': return <JobSeekerProfile userData={userData} onUpdate={fetchUserData} />;
+    case 'messages': return <ChatInterface userData={userData} />; // Add this line
+    default: return <JobRecommendations userData={userData} />;
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -127,10 +123,13 @@ const JobSeekerDashboard = () => {
                 )}
               </button>
 
-              {/* Messages */}
-              <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
-                <MessageSquare size={24} />
-              </button>
+          {/* Messages */}
+<button 
+  onClick={() => setActiveTab('messages')} // Add this line
+  className={`p-2 rounded-lg ${activeTab === 'messages' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
+>
+  <MessageSquare size={24} />
+</button>
 
               {/* Profile Dropdown */}
               <div className="flex items-center gap-2">

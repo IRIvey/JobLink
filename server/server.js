@@ -11,6 +11,7 @@ import companyRoutes from "./routes/companyRoutes.js";
 import profileRoutes from "./routes/jobSeekerProfileRoutes.js";
 import messageRoutes from "./routes/messageRoutes.js";
 import applicationRoutes from "./routes/applicationRoutes.js";
+import aiRoutes from "./routes/aiRoutes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 dotenv.config();
@@ -47,7 +48,7 @@ app.use("/api/messages", messageRoutes);
 
 app.use("/api/applications", applicationRoutes);
 app.use("/api/companies", companyRoutes);
-
+app.use("/api/ai", aiRoutes);
 
 
 
