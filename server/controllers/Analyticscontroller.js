@@ -219,3 +219,108 @@ export const getApplicationTrends = async (req, res) => {
       },
       { $sort: { "_id.date": 1 } },
     ]);
+
+    // Transform data for frontend
+    const formattedTrends = formatTrendsByStatus(trends, daysAgo, groupBy);
+
+    res.status(200).json({
+      success: true,
+      data: formattedTrends,
+    });
+  } catch (error) {
+    console.error("Application trends error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch application trends",
+      error: error.message,
+    });
+  }
+};
+
+// Get job performance analytics
+export const getJobPerformanceAnalytics = async (req, res) => {
+  try {
+    const companyId = req.user.id;
+    const { sortBy = "applications", limit = 10 } = req.query;
+
+    const sortCriteria = {
+      applications: { applicationCount: -1 },
+      conversion: { conversionRate: -1 },
+      recent: { "jobDetails.postedDate": -1 },
+    };
+
+    const jobPerformance = await Application.aggregate([
+      { $match: { company: new mongoose.Types.ObjectId(companyId) } },
+      {
+        $group: {
+          _id: "$job",
+          applicationCount: { $sum: 1 },
+          pendingCount: {
+            $sum: { $cond: [{ $eq: ["$status", "pending"] }, 1, 0] },
+          },
+          reviewingCount: {
+            $sum: { $cond: [{ $eq: ["$status", "reviewing"] }, 1, 0] },
+          },
+          interviewCount: {
+            $sum: { $cond: [{ $eq: ["$status", "interview"] }, 1, 0] },
+          },
+          acceptedCount: {
+            $sum: { $cond: [{ $eq: ["$status", "accepted"] }, 1, 0] },
+          },
+          rejectedCount: {
+            $sum: { $cond: [{ $eq: ["$status", "rejected"] }, 1, 0] },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "jobs",
+          localField: "_id",
+          foreignField: "_id",
+          as: "jobDetails",
+        },
+      },
+      { $unwind: "$jobDetails" },
+      {
+        $addFields: {
+          conversionRate: {
+            $multiply: [
+              { $divide: ["$acceptedCount", "$applicationCount"] },
+              100,
+            ],
+          },
+        },
+      },
+      { $sort: sortCriteria[sortBy] || sortCriteria.applications },
+      { $limit: parseInt(limit) },
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: jobPerformance.map((job) => ({
+        id: job._id,
+        title: job.jobDetails.title,
+        location: job.jobDetails.location,
+        type: job.jobDetails.type,
+        status: job.jobDetails.status,
+        postedDate: job.jobDetails.postedDate,
+        metrics: {
+          totalApplications: job.applicationCount,
+          pending: job.pendingCount,
+          reviewing: job.reviewingCount,
+          interview: job.interviewCount,
+          accepted: job.acceptedCount,
+          rejected: job.rejectedCount,
+          conversionRate: job.conversionRate.toFixed(1),
+        },
+      })),
+    });
+  } catch (error) {
+    console.error("Job performance analytics error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch job performance analytics",
+      error: error.message,
+    });
+  }
+};
