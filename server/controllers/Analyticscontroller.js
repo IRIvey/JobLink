@@ -43,7 +43,7 @@ export const getAnalyticsOverview = async (req, res) => {
           },
         },
       ]),
-    
+
       // Application trends over time
       Application.aggregate([
         {
@@ -63,7 +63,7 @@ export const getAnalyticsOverview = async (req, res) => {
         { $sort: { _id: 1 } },
       ]),
 
-           // Top performing jobs by application count
+      // Top performing jobs by application count
       Application.aggregate([
         { $match: { company: new mongoose.Types.ObjectId(companyId) } },
         {
@@ -346,7 +346,6 @@ export const getCandidateAnalytics = async (req, res) => {
   }
 };
 
-
 // Get sourcing analytics
 export const getSourcingAnalytics = async (req, res) => {
   try {
@@ -441,3 +440,200 @@ export const getTimeToHireMetrics = async (req, res) => {
     });
   }
 };
+
+// Helper Functions
+
+async function getCandidateMetrics(companyId) {
+  const applications = await Application.find({ company: companyId })
+    .populate({
+      path: "jobSeeker",
+      select: "skills experience location",
+    })
+    .limit(500);
+
+  // Skills distribution
+  const skillsMap = {};
+  applications.forEach((app) => {
+    if (app.jobSeeker?.skills) {
+      app.jobSeeker.skills.forEach((skill) => {
+        skillsMap[skill] = (skillsMap[skill] || 0) + 1;
+      });
+    }
+  });
+
+  const topSkills = Object.entries(skillsMap)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([skill, count]) => ({ skill, count }));
+
+  // Experience distribution
+  const experienceLevels = {
+    "0-2 years": 0,
+    "3-5 years": 0,
+    "6-10 years": 0,
+    "10+ years": 0,
+  };
+
+  applications.forEach((app) => {
+    if (app.jobSeeker?.experience) {
+      const totalYears = calculateTotalYears(app.jobSeeker.experience);
+      if (totalYears <= 2) experienceLevels["0-2 years"]++;
+      else if (totalYears <= 5) experienceLevels["3-5 years"]++;
+      else if (totalYears <= 10) experienceLevels["6-10 years"]++;
+      else experienceLevels["10+ years"]++;
+    }
+  });
+
+  // Location distribution
+  const locationMap = {};
+  applications.forEach((app) => {
+    if (app.jobSeeker?.location) {
+      const location = app.jobSeeker.location;
+      locationMap[location] = (locationMap[location] || 0) + 1;
+    }
+  });
+
+  const topLocations = Object.entries(locationMap)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([location, count]) => ({ location, count }));
+
+  return {
+    topSkills,
+    experienceDistribution: experienceLevels,
+    topLocations,
+    totalCandidates: applications.length,
+  };
+}
+
+async function getResponseMetrics(companyId, startDate) {
+  const applications = await Application.find({
+    company: companyId,
+    appliedDate: { $gte: startDate },
+  }).select("appliedDate statusHistory status");
+
+  let totalResponseTime = 0;
+  let responsesCount = 0;
+
+  applications.forEach((app) => {
+    if (app.statusHistory && app.statusHistory.length > 0) {
+      const firstResponse = app.statusHistory[0];
+      const responseTime =
+        (new Date(firstResponse.updatedAt) - new Date(app.appliedDate)) /
+        (1000 * 60 * 60); // in hours
+      totalResponseTime += responseTime;
+      responsesCount++;
+    }
+  });
+
+  const avgResponseTime =
+    responsesCount > 0 ? totalResponseTime / responsesCount : 0;
+
+  return {
+    averageResponseTimeHours: avgResponseTime.toFixed(1),
+    averageResponseTimeDays: (avgResponseTime / 24).toFixed(1),
+    totalResponded: responsesCount,
+    responseRate:
+      applications.length > 0
+        ? ((responsesCount / applications.length) * 100).toFixed(1)
+        : 0,
+  };
+}
+
+function calculateTotalYears(experienceArray) {
+  if (!Array.isArray(experienceArray)) return 0;
+
+  let totalMonths = 0;
+  experienceArray.forEach((exp) => {
+    if (exp.startDate) {
+      const start = new Date(exp.startDate);
+      const end = exp.current
+        ? new Date()
+        : exp.endDate
+        ? new Date(exp.endDate)
+        : new Date();
+      const months =
+        (end.getFullYear() - start.getFullYear()) * 12 +
+        (end.getMonth() - start.getMonth());
+      totalMonths += months;
+    }
+  });
+
+  return totalMonths / 12;
+}
+
+function formatTrendData(trends, daysAgo) {
+  const dateMap = {};
+
+  trends.forEach((item) => {
+    dateMap[item._id] = item.count;
+  });
+
+  // Fill in missing dates
+  const result = [];
+  const today = new Date();
+
+  for (let i = daysAgo - 1; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toISOString().split("T")[0];
+
+    result.push({
+      date: dateStr,
+      count: dateMap[dateStr] || 0,
+      label: formatDateLabel(date, i, daysAgo),
+    });
+  }
+
+  return result;
+}
+
+function formatTrendsByStatus(trends, daysAgo, groupBy) {
+  const dateMap = {};
+
+  trends.forEach((item) => {
+    if (!dateMap[item._id.date]) {
+      dateMap[item._id.date] = {
+        date: item._id.date,
+        pending: 0,
+        reviewing: 0,
+        interview: 0,
+        accepted: 0,
+        rejected: 0,
+      };
+    }
+    dateMap[item._id.date][item._id.status] = item.count;
+  });
+
+  return Object.values(dateMap).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function formatDateLabel(date, daysBack, totalDays) {
+  if (totalDays <= 7) {
+    return `Day ${totalDays - daysBack}`;
+  } else if (totalDays <= 30) {
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  } else {
+    return date.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+  }
+}
+
+function createDistribution(data) {
+  const ranges = {
+    "0-7 days": 0,
+    "8-14 days": 0,
+    "15-30 days": 0,
+    "31-60 days": 0,
+    "60+ days": 0,
+  };
+
+  data.forEach((days) => {
+    if (days <= 7) ranges["0-7 days"]++;
+    else if (days <= 14) ranges["8-14 days"]++;
+    else if (days <= 30) ranges["15-30 days"]++;
+    else if (days <= 60) ranges["31-60 days"]++;
+    else ranges["60+ days"]++;
+  });
+
+  return ranges;
+}
