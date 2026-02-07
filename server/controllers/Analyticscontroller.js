@@ -324,3 +324,24 @@ export const getJobPerformanceAnalytics = async (req, res) => {
     });
   }
 };
+
+// Get candidate analytics
+export const getCandidateAnalytics = async (req, res) => {
+  try {
+    const companyId = req.user.id;
+
+    const candidateData = await getCandidateMetrics(companyId);
+
+    res.status(200).json({
+      success: true,
+      data: candidateData,
+    });
+  } catch (error) {
+    console.error("Candidate analytics error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch candidate analytics",
+      error: error.message,
+    });
+  }
+};
