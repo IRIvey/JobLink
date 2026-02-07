@@ -6,7 +6,7 @@ import {
   getCandidateAnalytics,
   getSourcingAnalytics,
   getTimeToHireMetrics,
-} from "../controllers/analyticsController.js";
+} from "../controllers/Analyticscontroller.js";
 import { protect, authorizeRoles } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
