@@ -381,3 +381,63 @@ export const getSourcingAnalytics = async (req, res) => {
     });
   }
 };
+
+// Get time-to-hire metrics
+export const getTimeToHireMetrics = async (req, res) => {
+  try {
+    const companyId = req.user.id;
+
+    const hiredApplications = await Application.find({
+      company: companyId,
+      status: "accepted",
+    })
+      .select("appliedDate statusHistory")
+      .limit(100);
+
+    const timeToHireData = hiredApplications
+      .map((app) => {
+        const hiredStatus = app.statusHistory.find(
+          (h) => h.status === "accepted"
+        );
+        if (hiredStatus) {
+          const days = Math.floor(
+            (new Date(hiredStatus.updatedAt) - new Date(app.appliedDate)) /
+              (1000 * 60 * 60 * 24)
+          );
+          return days;
+        }
+        return null;
+      })
+      .filter((d) => d !== null);
+
+    const avgTimeToHire =
+      timeToHireData.length > 0
+        ? (
+            timeToHireData.reduce((a, b) => a + b, 0) / timeToHireData.length
+          ).toFixed(1)
+        : 0;
+
+    const minTimeToHire =
+      timeToHireData.length > 0 ? Math.min(...timeToHireData) : 0;
+    const maxTimeToHire =
+      timeToHireData.length > 0 ? Math.max(...timeToHireData) : 0;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        averageDays: avgTimeToHire,
+        minimumDays: minTimeToHire,
+        maximumDays: maxTimeToHire,
+        totalHires: timeToHireData.length,
+        distribution: createDistribution(timeToHireData),
+      },
+    });
+  } catch (error) {
+    console.error("Time to hire metrics error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch time-to-hire metrics",
+      error: error.message,
+    });
+  }
+};
