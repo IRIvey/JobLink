@@ -44,3 +44,21 @@ export const getAnalyticsOverview = async (req, res) => {
         },
       ]),
     
+      // Application trends over time
+      Application.aggregate([
+        {
+          $match: {
+            company: new mongoose.Types.ObjectId(companyId),
+            appliedDate: { $gte: startDate },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              $dateToString: { format: "%Y-%m-%d", date: "$appliedDate" },
+            },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
