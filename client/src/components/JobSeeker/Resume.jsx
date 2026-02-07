@@ -610,29 +610,17 @@ case 'certifications':
   );
 
         case 'skills':
-          return resumeData.skills.length > 0 && (
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold mb-4 pb-2 border-b-2" 
-                  style={{ color: template.primaryColor, borderColor: template.accentColor }}>
-                SKILLS
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {resumeData.skills.map((skill, index) => (
-                  <span 
-                    key={index} 
-                    className="px-4 py-2 rounded-lg font-medium text-sm border-2 transition-all hover:scale-105"
-                    style={{ 
-                      backgroundColor: `${template.accentColor}20`,
-                      color: template.primaryColor,
-                      borderColor: template.accentColor
-                    }}
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
-          );
+  return resumeData.skills.length > 0 && (
+    <div className="mb-8">
+      <h2 className="text-2xl font-bold mb-4 pb-2 border-b-2" 
+          style={{ color: template.primaryColor, borderColor: template.accentColor }}>
+        SKILLS
+      </h2>
+      <p className="text-gray-700 leading-relaxed">
+        {resumeData.skills.join(' , ')}
+      </p>
+    </div>
+  );
 
         case 'projects':
           return resumeData.projects.length > 0 && (
@@ -1531,58 +1519,60 @@ case 'certifications':
             </div>
           )}
 
-          {activeTab === 'edit' && activeSection === 'skills' && (
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <Code className="text-blue-600" size={32} />
-                Skills
-              </h2>
-              <div className="mb-8">
-                <label className="block text-sm font-bold text-gray-700 mb-3">Add Skill</label>
-                <div className="flex gap-3">
-                  <input
-                    type="text"
-                    id="skillInput"
-                    className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="e.g., JavaScript, Project Management, Adobe Photoshop"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        addSkill(e.target.value);
-                        e.target.value = '';
-                      }
-                    }}
-                  />
-                  <button
-                    onClick={() => {
-                      const input = document.getElementById('skillInput');
-                      addSkill(input.value);
-                      input.value = '';
-                    }}
-                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
-                  >
-                    <Plus size={20} />
-                    Add
-                  </button>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                {resumeData.skills.map((skill, index) => (
-  <div
-    key={`skill-${index}-${skill}`}
-                    className="group flex items-center gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 text-blue-700 px-5 py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
-                  >
-                    <span>{skill}</span>
-                    <button
-                      onClick={() => removeSkill(skill)}
-                      className="text-red-500 hover:text-red-700 hover:scale-110 transition-all"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+        {activeTab === 'edit' && activeSection === 'skills' && (
+    <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
+      <h2 className="text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+        <Code className="text-blue-600" size={32} />
+        Skills
+      </h2>
+      <div className="mb-8">
+        <label className="block text-sm font-bold text-gray-700 mb-3">Add Skill</label>
+        <div className="flex gap-3">
+          <input
+            type="text"
+            id="skillInput"
+            className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="e.g., JavaScript, Project Management, Adobe Photoshop"
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                addSkill(e.target.value);
+                e.target.value = '';
+              }
+            }}
+          />
+          <button
+            onClick={() => {
+              const input = document.getElementById('skillInput');
+              addSkill(input.value);
+              input.value = '';
+            }}
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+          >
+            <Plus size={20} />
+            Add
+          </button>
+        </div>
+      </div>
+      
+      {/* Plain List Design */}
+      <div className="space-y-2">
+        {resumeData.skills.map((skill, index) => (
+          <div
+            key={`skill-${index}-${skill}`}
+            className="group flex items-center justify-between py-3 px-4 border-l-4 border-blue-500 bg-gray-50 hover:bg-gray-100 transition-colors"
+          >
+            <span className="text-gray-900 font-medium">{skill}</span>
+            <button
+              onClick={() => removeSkill(skill)}
+              className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <Trash2 size={18} />
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )}
 
           {activeTab === 'edit' && activeSection === 'projects' && (
             <div className="space-y-6">
