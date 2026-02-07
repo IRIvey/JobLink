@@ -824,18 +824,11 @@ const Applicants = () => {
 
                       <p className="text-sm text-gray-700 mb-3 font-medium truncate">{app.job}</p>
 
-                      <div className="flex flex-wrap gap-1.5 mb-3">
-                        {app.skills.slice(0, 3).map((skill, idx) => (
-                          <span key={idx} className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-md font-medium">
-                            {skill}
-                          </span>
-                        ))}
-                        {app.skills.length > 3 && (
-                          <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md font-medium">
-                            +{app.skills.length - 3}
-                          </span>
-                        )}
-                      </div>
+                      {/* ✅ PLAIN SKILLS DISPLAY */}
+                      <p className="text-xs text-gray-600 mb-3 line-clamp-1">
+                        {app.skills.slice(0, 5).join(' • ')}
+                        {app.skills.length > 5 && ` • +${app.skills.length - 5} more`}
+                      </p>
 
                       <div className="flex items-center justify-between">
                         <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${getStatusColor(app.status)}`}>
@@ -932,23 +925,6 @@ const Applicants = () => {
                         </h3>
                         <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                           <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{selectedApplication.coverLetter}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Skills */}
-                    {selectedApplication.skills && selectedApplication.skills.length > 0 && (
-                      <div className="mb-6">
-                        <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2 text-base md:text-lg">
-                          <Award size={18} />
-                          Skills & Expertise
-                        </h3>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedApplication.skills.map((skill, idx) => (
-                            <span key={idx} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 text-xs md:text-sm rounded-lg font-medium border border-indigo-200">
-                              {skill}
-                            </span>
-                          ))}
                         </div>
                       </div>
                     )}
