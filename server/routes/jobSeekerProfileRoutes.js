@@ -9,6 +9,8 @@ import {
   deleteExperience,
   addEducation,
   deleteEducation,
+  addSkill,
+  deleteSkill,
   addCertification,
   deleteCertification,
 } from "../controllers/JobSeekerProfileController.js";
@@ -32,6 +34,10 @@ router.delete("/experience/:experienceId", deleteExperience);
 // --- Education ---
 router.post("/education", addEducation);
 router.delete("/education/:educationId", deleteEducation);
+
+// --- Skills ---
+router.post("/skills", addSkill);
+router.delete("/skills/:skillId", deleteSkill);
 
 // --- Certifications ---
 router.post("/certifications", addCertification);

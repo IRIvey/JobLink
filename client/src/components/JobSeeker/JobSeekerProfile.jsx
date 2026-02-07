@@ -19,7 +19,7 @@ import {
 
 const JobSeekerProfile = ({ userData, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [showModal, setShowModal] = useState(null); // 'experience' | 'education' | 'certifications'
+  const [showModal, setShowModal] = useState(null); // 'experience' | 'education' | 'certifications' | 'skills'
 
   const profileInputRef = useRef(null);
   const coverInputRef = useRef(null);
@@ -30,13 +30,11 @@ const JobSeekerProfile = ({ userData, onUpdate }) => {
     phone: "",
     location: "",
     bio: "",
-    skills: [],
     website: "",
     linkedin: "",
     github: "",
   });
 
-  const [newSkill, setNewSkill] = useState("");
   const [itemForm, setItemForm] = useState({});
 
   const token = localStorage.getItem("token");
@@ -50,7 +48,6 @@ const JobSeekerProfile = ({ userData, onUpdate }) => {
         phone: userData.phone || "",
         location: userData.location || "",
         bio: userData.bio || "",
-        skills: userData.skills || [],
         website: userData.website || "",
         linkedin: userData.linkedin || "",
         github: userData.github || "",
@@ -65,9 +62,6 @@ const JobSeekerProfile = ({ userData, onUpdate }) => {
   };
 
   // --- Photo Upload Handlers ---
-  // Backend expected:
-  // POST /photo  { image: base64 }
-  // POST /cover  { image: base64 }
   const handlePhotoUpload = async (e, type) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -99,8 +93,6 @@ const JobSeekerProfile = ({ userData, onUpdate }) => {
   };
 
   // --- Save Profile ---
-  // Backend expected:
-  // PUT /  {fullName,email,...}
   const handleSave = async () => {
     try {
       const response = await fetch(`${API_BASE}`, {
@@ -125,26 +117,7 @@ const JobSeekerProfile = ({ userData, onUpdate }) => {
     }
   };
 
-  // --- Skills ---
-  const handleAddSkill = () => {
-    const s = newSkill.trim();
-    if (!s) return;
-    if (formData.skills.includes(s)) return;
-
-    setFormData((prev) => ({ ...prev, skills: [...prev.skills, s] }));
-    setNewSkill("");
-  };
-
-  const handleRemoveSkill = (skillToRemove) => {
-    setFormData((prev) => ({
-      ...prev,
-      skills: prev.skills.filter((s) => s !== skillToRemove),
-    }));
-  };
-
   // --- Sub-document Handlers ---
-  // Backend expected:
-  // POST /experience, /education, /certifications
   const handleAddItem = async (path) => {
     try {
       const response = await fetch(`${API_BASE}/${path}`, {
@@ -170,20 +143,8 @@ const JobSeekerProfile = ({ userData, onUpdate }) => {
     }
   };
 
-  // Backend expected:
-  // DELETE /experience/:experienceId
-  // DELETE /education/:educationId
-  // DELETE /certifications/:certificationId
   const handleDeleteItem = async (path, id) => {
     if (!window.confirm("Are you sure?")) return;
-
-    // map correct param name based on your controller route params
-    const paramKey =
-      path === "experience"
-        ? "experienceId"
-        : path === "education"
-        ? "educationId"
-        : "certificationId";
 
     try {
       const response = await fetch(`${API_BASE}/${path}/${id}`, {
@@ -205,11 +166,20 @@ const JobSeekerProfile = ({ userData, onUpdate }) => {
 
   const sections = [
     {
+      title: "Skills",
+      key: "skills",
+      icon: <Award className="text-indigo-600" />,
+      bg: "bg-indigo-100",
+      path: "skills",
+      isResume: true,
+    },
+    {
       title: "Work Experience",
       key: "experience",
       icon: <Briefcase className="text-blue-600" />,
       bg: "bg-blue-100",
       path: "experience",
+      isResume: true,
     },
     {
       title: "Education",
@@ -217,15 +187,16 @@ const JobSeekerProfile = ({ userData, onUpdate }) => {
       icon: <GraduationCap className="text-green-600" />,
       bg: "bg-green-100",
       path: "education",
+      isResume: true,
     },
     {
-    title: "Certifications",
-    key: "certifications",
-    icon: <Award className="text-amber-600" />,
-    bg: "bg-amber-100",
-    path: "certifications",
-    isResume: true, // ✅ Add this flag
-  },
+      title: "Certifications",
+      key: "certifications",
+      icon: <Award className="text-amber-600" />,
+      bg: "bg-amber-100",
+      path: "certifications",
+      isResume: true,
+    },
   ];
 
   return (
@@ -291,21 +262,10 @@ const JobSeekerProfile = ({ userData, onUpdate }) => {
                 </button>
               </div>
 
-          <div className="pb-2">
-  {/* Remove this editing input for name */}
-  {/* {isEditing ? (
-    <input
-      name="fullName"
-      value={formData.fullName}
-      onChange={handleInputChange}
-      placeholder="Full Name"
-      className="text-3xl font-bold text-gray-900 mb-2 w-full border-b-2 border-gray-200 focus:border-indigo-600 outline-none"
-    />
-  ) : ( */}
-    <h1 className="text-3xl font-bold text-gray-900 mb-2">
-      {formData.fullName || "Add Your Name"}
-    </h1>
-  {/* )} */}
+              <div className="pb-2">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                  {formData.fullName || "Add Your Name"}
+                </h1>
 
                 <div className="flex flex-wrap gap-4 text-gray-600">
                   <div className="flex items-center gap-1">
@@ -356,7 +316,6 @@ const JobSeekerProfile = ({ userData, onUpdate }) => {
                     type="button"
                     onClick={() => {
                       setIsEditing(false);
-                      // reset values to latest userData
                       if (userData) {
                         setFormData({
                           fullName: userData.fullName || "",
@@ -364,7 +323,6 @@ const JobSeekerProfile = ({ userData, onUpdate }) => {
                           phone: userData.phone || "",
                           location: userData.location || "",
                           bio: userData.bio || "",
-                          skills: userData.skills || [],
                           website: userData.website || "",
                           linkedin: userData.linkedin || "",
                           github: userData.github || "",
@@ -404,217 +362,167 @@ const JobSeekerProfile = ({ userData, onUpdate }) => {
             </div>
           )}
 
-          {/* Extra fields when editing */}
-        {/* Extra fields when editing */}
-{isEditing && (
-  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-    <input
-      name="fullName"
-      value={formData.fullName}
-      onChange={handleInputChange}
-      placeholder="Full Name"
-      className="w-full p-3 border rounded-xl"
-    />
-    <input
-      name="phone"
-      value={formData.phone}
-      onChange={handleInputChange}
-      placeholder="Phone"
-      className="w-full p-3 border rounded-xl"
-    />
-    <input
-      name="website"
-      value={formData.website}
-      onChange={handleInputChange}
-      placeholder="Website"
-      className="w-full p-3 border rounded-xl"
-    />
-    <input
-      name="linkedin"
-      value={formData.linkedin}
-      onChange={handleInputChange}
-      placeholder="LinkedIn"
-      className="w-full p-3 border rounded-xl"
-    />
-    <input
-      name="github"
-      value={formData.github}
-      onChange={handleInputChange}
-      placeholder="GitHub"
-      className="w-full p-3 border rounded-xl"
-    />
-  </div>
-)}
-
-          {/* Skills */}
-          <div className="mt-6">
-            <h3 className="font-bold text-gray-900 mb-2">Skills</h3>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {formData.skills?.length ? (
-                formData.skills.map((skill) => (
-                  <span
-                    key={skill}
-                    className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full flex items-center gap-2"
-                  >
-                    {skill}
-                    {isEditing && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSkill(skill)}
-                        className="text-indigo-700 hover:text-indigo-900"
-                      >
-                        <X size={14} />
-                      </button>
-                    )}
-                  </span>
-                ))
-              ) : (
-                <span className="text-gray-500">No skills added yet</span>
-              )}
+          {isEditing && (
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleInputChange}
+                placeholder="Full Name"
+                className="w-full p-3 border rounded-xl"
+              />
+              <input
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                placeholder="Phone"
+                className="w-full p-3 border rounded-xl"
+              />
+              <input
+                name="website"
+                value={formData.website}
+                onChange={handleInputChange}
+                placeholder="Website"
+                className="w-full p-3 border rounded-xl"
+              />
+              <input
+                name="linkedin"
+                value={formData.linkedin}
+                onChange={handleInputChange}
+                placeholder="LinkedIn"
+                className="w-full p-3 border rounded-xl"
+              />
+              <input
+                name="github"
+                value={formData.github}
+                onChange={handleInputChange}
+                placeholder="GitHub"
+                className="w-full p-3 border rounded-xl"
+              />
             </div>
-
-            {isEditing && (
-              <div className="flex gap-2">
-                <input
-                  value={newSkill}
-                  onChange={(e) => setNewSkill(e.target.value)}
-                  placeholder="Add a skill (e.g. React)"
-                  className="flex-1 p-3 border rounded-xl"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddSkill}
-                  className="px-4 py-3 bg-indigo-600 text-white rounded-xl"
-                >
-                  Add
-                </button>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
       {/* Dynamic Sections */}
-    {/* Dynamic Sections */}
+      {sections.map((section) => {
+        const sectionData = section.isResume
+          ? userData?.resume?.[section.key]
+          : userData?.[section.key];
 
+        return (
+          <div
+            key={section.key}
+            className="bg-white rounded-xl shadow-lg border border-gray-200 p-8"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 ${section.bg} rounded-lg`}>
+                  {section.icon}
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {section.title}
+                </h2>
+              </div>
 
-{/* Dynamic Sections */}
-{sections.map((section) => {
-  // ✅ Get data from resume if it's a resume section
-  const sectionData = section.isResume 
-    ? userData?.resume?.[section.key] 
-    : userData?.[section.key];
-
-  return (
-    <div
-      key={section.key}
-      className="bg-white rounded-xl shadow-lg border border-gray-200 p-8"
-    >
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className={`p-2 ${section.bg} rounded-lg`}>
-            {section.icon}
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            {section.title}
-          </h2>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => {
-            setShowModal(section.key);
-            setItemForm({});
-          }}
-          className="flex items-center gap-2 text-indigo-600 font-semibold"
-        >
-          <Plus size={18} /> Add
-        </button>
-      </div>
-
-      <div className="space-y-6">
-        {sectionData && sectionData.length > 0 ? (
-          sectionData.map((item) => (
-            <div
-              key={item._id || item.id}
-              className="group relative border-l-4 border-indigo-500 pl-6 py-2"
-            >
               <button
                 type="button"
-                onClick={() => handleDeleteItem(section.path, item._id || item.id)}
-                className="absolute right-0 top-0 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => {
+                  setShowModal(section.key);
+                  setItemForm({});
+                }}
+                className="flex items-center gap-2 text-indigo-600 font-semibold hover:text-indigo-700 transition-colors"
               >
-                <Trash2 size={18} />
+                <Plus size={18} /> Add
               </button>
+            </div>
 
-              <h3 className="text-lg font-bold text-gray-900">
-                {item.title || item.degree || item.name}
-              </h3>
-              <p className="text-indigo-600 font-medium">
-                {item.company || item.school || item.issuingOrg || item.issuer}
-              </p>
+            <div className="space-y-6">
+              {sectionData && sectionData.length > 0 ? (
+                sectionData.map((item, index) => (
+                  <div
+                    key={section.key === "skills" ? item : (item._id || item.id)}
+                    className="group relative border-l-4 border-indigo-500 pl-6 py-2"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteItem(section.path, section.key === "skills" ? item : (item._id || item.id))}
+                      className="absolute right-0 top-0 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-600"
+                    >
+                      <Trash2 size={18} />
+                    </button>
 
-              {section.key === "certifications" && (
-                <div className="mt-2 space-y-1">
-                  {item.credentialId && (
-                    <p className="text-sm text-gray-600">
-                      🆔 ID: {item.credentialId}
-                    </p>
-                  )}
-                  
-                  <div className="flex gap-3 flex-wrap">
-                    {item.credentialUrl && (
-                      <a
-                        href={item.credentialUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:underline flex items-center gap-1"
-                      >
-                        <LinkIcon size={14} /> View Credential
-                      </a>
+                    <h3 className="text-lg font-bold text-gray-900">
+                      {section.key === "skills" ? item : (item.title || item.degree || item.name)}
+                    </h3>
+                    {section.key !== "skills" && (
+                      <p className="text-indigo-600 font-medium">
+                        {item.company || item.school || item.issuingOrg || item.issuer}
+                      </p>
                     )}
-                    
-                    {item.certificateImageUrl && (
-                      <a
-                        href={item.certificateImageUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:underline flex items-center gap-1"
-                      >
-                        🖼️ View Certificate
-                      </a>
+
+                    {section.key === "certifications" && (
+                      <div className="mt-2 space-y-1">
+                        {item.credentialId && (
+                          <p className="text-sm text-gray-600">🆔 ID: {item.credentialId}</p>
+                        )}
+
+                        <div className="flex gap-3 flex-wrap">
+                          {item.credentialUrl && (
+                            <a
+                              href={item.credentialUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                            >
+                              <LinkIcon size={14} /> View Credential
+                            </a>
+                          )}
+
+                          {item.certificateImageUrl && (
+                            <a
+                              href={item.certificateImageUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                            >
+                              🖼️ View Certificate
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {section.key !== "skills" && (
+                      <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
+                        <Calendar size={14} />
+                        {item.startDate
+                          ? `${new Date(item.startDate).getFullYear()} - ${
+                              item.current
+                                ? "Present"
+                                : item.endDate
+                                ? new Date(item.endDate).getFullYear()
+                                : "Present"
+                            }`
+                          : item.issueDate
+                          ? new Date(item.issueDate).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "long",
+                            })
+                          : item.date || ""}
+                      </p>
                     )}
                   </div>
+                ))
+              ) : (
+                <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+                  <p className="text-gray-500">No {section.title.toLowerCase()} added yet</p>
                 </div>
               )}
-
-              <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
-                <Calendar size={14} />
-                {item.startDate
-                  ? `${new Date(item.startDate).getFullYear()} - ${
-                      item.current
-                        ? "Present"
-                        : item.endDate
-                        ? new Date(item.endDate).getFullYear()
-                        : "Present"
-                    }`
-                  : item.issueDate 
-                  ? new Date(item.issueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
-                  : item.date || ""}
-              </p>
             </div>
-          ))
-        ) : (
-          <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-            <p className="text-gray-500">
-              No {section.title.toLowerCase()} added yet
-            </p>
           </div>
-        )}
-      </div>
-    </div>
-  );
-})}
+        );
+      })}
 
       {/* Modal */}
       {showModal && (
@@ -622,7 +530,7 @@ const JobSeekerProfile = ({ userData, onUpdate }) => {
           <div className="bg-white rounded-2xl w-full max-w-lg p-8 shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-2xl font-bold capitalize">
-                Add {showModal}
+                Add {showModal === "skills" ? "Skill" : showModal}
               </h3>
               <button type="button" onClick={() => setShowModal(null)}>
                 <X />
@@ -630,6 +538,19 @@ const JobSeekerProfile = ({ userData, onUpdate }) => {
             </div>
 
             <div className="space-y-4">
+              {showModal === "skills" && (
+                <>
+                  <input
+                    placeholder="Skill Name (e.g. React, Python, Project Management)"
+                    className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                    value={itemForm.name || ""}
+                    onChange={(e) =>
+                      setItemForm((p) => ({ ...p, name: e.target.value }))
+                    }
+                  />
+                </>
+              )}
+
               {showModal === "experience" && (
                 <>
                   <input
@@ -690,92 +611,90 @@ const JobSeekerProfile = ({ userData, onUpdate }) => {
                 </>
               )}
 
-{showModal === "certifications" && (
-  <div className="space-y-4">
-    <input
-      placeholder="Certification Name (e.g. AWS Solutions Architect)"
-      className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-      value={itemForm.title || ""}
-      onChange={(e) =>
-        setItemForm((p) => ({ ...p, title: e.target.value }))
-      }
-    />
-    
-    <input
-      placeholder="Issuing Organization (e.g. Amazon Web Services)"
-      className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-      value={itemForm.issuingOrg || ""}
-      onChange={(e) =>
-        setItemForm((p) => ({ ...p, issuingOrg: e.target.value }))
-      }
-    />
+              {showModal === "certifications" && (
+                <div className="space-y-4">
+                  <input
+                    placeholder="Certification Name (e.g. AWS Solutions Architect)"
+                    className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={itemForm.title || ""}
+                    onChange={(e) =>
+                      setItemForm((p) => ({ ...p, title: e.target.value }))
+                    }
+                  />
+                  
+                  <input
+                    placeholder="Issuing Organization (e.g. Amazon Web Services)"
+                    className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={itemForm.issuingOrg || ""}
+                    onChange={(e) =>
+                      setItemForm((p) => ({ ...p, issuingOrg: e.target.value }))
+                    }
+                  />
 
-    <input
-      placeholder="Credential URL (Verification Link)"
-      className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-      value={itemForm.credentialUrl || ""}
-      onChange={(e) =>
-        setItemForm((p) => ({ ...p, credentialUrl: e.target.value }))
-      }
-    />
+                  <input
+                    placeholder="Credential URL (Verification Link)"
+                    className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={itemForm.credentialUrl || ""}
+                    onChange={(e) =>
+                      setItemForm((p) => ({ ...p, credentialUrl: e.target.value }))
+                    }
+                  />
 
-    {/* ✅ NEW: Certificate Image URL */}
-    <input
-      placeholder="Certificate Image URL (Optional - e.g. https://imgur.com/abc123.png)"
-      className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-      value={itemForm.certificateImageUrl || ""}
-      onChange={(e) =>
-        setItemForm((p) => ({ ...p, certificateImageUrl: e.target.value }))
-      }
-    />
-    
-    <div className="flex gap-2">
-      <input
-        type="month"
-        className="w-1/2 p-3 border rounded-xl"
-        value={itemForm.issueDate || ""}
-        onChange={(e) =>
-          setItemForm((p) => ({ ...p, issueDate: e.target.value }))
-        }
-      />
-      <input
-        placeholder="Credential ID (Optional)"
-        className="w-1/2 p-3 border rounded-xl"
-        value={itemForm.credentialId || ""}
-        onChange={(e) =>
-          setItemForm((p) => ({ ...p, credentialId: e.target.value }))
-        }
-      />
-    </div>
+                  <input
+                    placeholder="Certificate Image URL (Optional - e.g. https://imgur.com/abc123.png)"
+                    className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={itemForm.certificateImageUrl || ""}
+                    onChange={(e) =>
+                      setItemForm((p) => ({ ...p, certificateImageUrl: e.target.value }))
+                    }
+                  />
+                  
+                  <div className="flex gap-2">
+                    <input
+                      type="month"
+                      className="w-1/2 p-3 border rounded-xl"
+                      value={itemForm.issueDate || ""}
+                      onChange={(e) =>
+                        setItemForm((p) => ({ ...p, issueDate: e.target.value }))
+                      }
+                    />
+                    <input
+                      placeholder="Credential ID (Optional)"
+                      className="w-1/2 p-3 border rounded-xl"
+                      value={itemForm.credentialId || ""}
+                      onChange={(e) =>
+                        setItemForm((p) => ({ ...p, credentialId: e.target.value }))
+                      }
+                    />
+                  </div>
 
-    {/* ✅ Preview the image if URL is provided */}
-    {itemForm.certificateImageUrl && (
-      <div className="border rounded-xl p-4 bg-gray-50">
-        <p className="text-sm text-gray-600 mb-2">Certificate Preview:</p>
-        <img 
-          src={itemForm.certificateImageUrl} 
-          alt="Certificate preview" 
-          className="max-h-48 rounded-lg border"
-          onError={(e) => {
-            e.target.style.display = 'none';
-            e.target.nextSibling.style.display = 'block';
-          }}
-        />
-        <p className="text-sm text-red-500 hidden mt-2">
-          Unable to load image. Please check the URL.
-        </p>
-      </div>
-    )}
-  </div>
-)}
+                  {itemForm.certificateImageUrl && (
+                    <div className="border rounded-xl p-4 bg-gray-50">
+                      <p className="text-sm text-gray-600 mb-2">Certificate Preview:</p>
+                      <img 
+                        src={itemForm.certificateImageUrl} 
+                        alt="Certificate preview" 
+                        className="max-h-48 rounded-lg border"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'block';
+                        }}
+                      />
+                      <p className="text-sm text-red-500 hidden mt-2">
+                        Unable to load image. Please check the URL.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
-<button
-  type="button"
-  onClick={() => handleAddItem(showModal)}
-  className="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all"
->
-  Save
-</button>
+              <button
+                type="button"
+                onClick={() => handleAddItem(showModal)}
+                className="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all"
+              >
+                Save
+              </button>
             </div>
           </div>
         </div>
