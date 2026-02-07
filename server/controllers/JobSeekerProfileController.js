@@ -283,6 +283,71 @@ export const deleteEducation = async (req, res) => {
   }
 };
 
+// ADD Skill
+export const addSkill = async (req, res) => {
+  try {
+    const profile = await JobSeeker.findById(req.user.id);
+    if (!profile) return res.status(404).json({ message: "Profile not found" });
+
+    const { name } = req.body;
+    
+    if (!name || !name.trim()) {
+      return res.status(400).json({ message: "Skill name is required" });
+    }
+
+    const skillName = name.trim();
+
+    // Initialize resume if needed
+    if (!profile.resume) profile.resume = {};
+    if (!Array.isArray(profile.resume.skills)) profile.resume.skills = [];
+
+    // Check if skill already exists
+    if (profile.resume.skills.includes(skillName)) {
+      return res.status(400).json({ message: "Skill already exists" });
+    }
+
+    // Add skill to resume.skills array
+    profile.resume.skills.unshift(skillName);
+    await profile.save();
+
+    return res.status(201).json(profile);
+  } catch (error) {
+    console.error("addSkill error:", error);
+    return res.status(400).json({ message: "Error adding skill" });
+  }
+};
+
+// DELETE Skill
+export const deleteSkill = async (req, res) => {
+  try {
+    const authId = req.user?.id || req.user?._id;
+    const { skillId } = req.params;
+
+    const profile = await JobSeeker.findById(authId);
+    if (!profile) return res.status(404).json({ message: "Profile not found" });
+
+    if (!profile.resume?.skills || !Array.isArray(profile.resume.skills)) {
+      return res.status(404).json({ message: "No skills found" });
+    }
+
+    // skillId is the actual skill name (string)
+    const skillIndex = profile.resume.skills.indexOf(skillId);
+    
+    if (skillIndex === -1) {
+      return res.status(404).json({ message: "Skill not found" });
+    }
+
+    // Remove the skill
+    profile.resume.skills.splice(skillIndex, 1);
+    await profile.save();
+
+    return res.status(200).json(profile);
+  } catch (error) {
+    console.error("deleteSkill error:", error);
+    return res.status(400).json({ message: "Delete failed" });
+  }
+};
+
 // ADD Certification
 export const addCertification = async (req, res) => {
   try {
