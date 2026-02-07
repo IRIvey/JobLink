@@ -345,3 +345,39 @@ export const getCandidateAnalytics = async (req, res) => {
     });
   }
 };
+
+
+// Get sourcing analytics
+export const getSourcingAnalytics = async (req, res) => {
+  try {
+    const companyId = req.user.id;
+
+    // For now, return mock data - you can implement actual tracking later
+    // This would require adding a 'source' field to Application model
+    const sourcingData = {
+      channels: [
+        { name: "LinkedIn", applications: 0, hires: 0, percentage: 45 },
+        { name: "Indeed", applications: 0, hires: 0, percentage: 30 },
+        { name: "Direct Referral", applications: 0, hires: 0, percentage: 15 },
+        { name: "Company Website", applications: 0, hires: 0, percentage: 5 },
+        { name: "Other", applications: 0, hires: 0, percentage: 5 },
+      ],
+      totalApplications: await Application.countDocuments({
+        company: companyId,
+      }),
+    };
+
+    res.status(200).json({
+      success: true,
+      data: sourcingData,
+      note: "Sourcing tracking not implemented yet. Add 'source' field to Application model to track this data.",
+    });
+  } catch (error) {
+    console.error("Sourcing analytics error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch sourcing analytics",
+      error: error.message,
+    });
+  }
+};
