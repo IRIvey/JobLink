@@ -62,3 +62,31 @@ export const getAnalyticsOverview = async (req, res) => {
         },
         { $sort: { _id: 1 } },
       ]),
+
+           // Top performing jobs by application count
+      Application.aggregate([
+        { $match: { company: new mongoose.Types.ObjectId(companyId) } },
+        {
+          $group: {
+            _id: "$job",
+            applicationCount: { $sum: 1 },
+            acceptedCount: {
+              $sum: { $cond: [{ $eq: ["$status", "accepted"] }, 1, 0] },
+            },
+            interviewCount: {
+              $sum: { $cond: [{ $eq: ["$status", "interview"] }, 1, 0] },
+            },
+          },
+        },
+        { $sort: { applicationCount: -1 } },
+        { $limit: 5 },
+        {
+          $lookup: {
+            from: "jobs",
+            localField: "_id",
+            foreignField: "_id",
+            as: "jobDetails",
+          },
+        },
+        { $unwind: "$jobDetails" },
+      ]),
