@@ -90,3 +90,85 @@ export const getAnalyticsOverview = async (req, res) => {
         },
         { $unwind: "$jobDetails" },
       ]),
+
+      // Candidate metrics
+      getCandidateMetrics(companyId),
+
+      // Response time metrics
+      getResponseMetrics(companyId, startDate),
+    ]);
+
+    // Format status breakdown
+    const statusBreakdown = {
+      pending: 0,
+      reviewing: 0,
+      interview: 0,
+      accepted: 0,
+      rejected: 0,
+    };
+
+    applicationsByStatus.forEach((item) => {
+      statusBreakdown[item._id] = item.count;
+    });
+
+    // Calculate conversion rates
+    const totalApps = totalApplications;
+    const conversionRates = {
+      applicationToInterview:
+        totalApps > 0
+          ? ((statusBreakdown.interview / totalApps) * 100).toFixed(1)
+          : 0,
+      interviewToHire:
+        statusBreakdown.interview > 0
+          ? (
+              (statusBreakdown.accepted / statusBreakdown.interview) *
+              100
+            ).toFixed(1)
+          : 0,
+      overallConversion:
+        totalApps > 0
+          ? ((statusBreakdown.accepted / totalApps) * 100).toFixed(1)
+          : 0,
+    };
+
+    res.status(200).json({
+      success: true,
+      data: {
+        overview: {
+          totalApplications,
+          activeJobs: await Job.countDocuments({
+            company: companyId,
+            status: "active",
+          }),
+          totalHires: statusBreakdown.accepted,
+          pendingReview: statusBreakdown.pending,
+        },
+        statusBreakdown,
+        conversionRates,
+        applicationTrends: formatTrendData(applicationTrends, daysAgo),
+        topPerformingJobs: topPerformingJobs.map((job) => ({
+          id: job._id,
+          title: job.jobDetails.title,
+          location: job.jobDetails.location,
+          type: job.jobDetails.type,
+          applicationCount: job.applicationCount,
+          interviewCount: job.interviewCount,
+          hiredCount: job.acceptedCount,
+          conversionRate:
+            job.applicationCount > 0
+              ? ((job.acceptedCount / job.applicationCount) * 100).toFixed(1)
+              : 0,
+        })),
+        candidateMetrics,
+        responseMetrics,
+      },
+    });
+  } catch (error) {
+    console.error("Analytics overview error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch analytics",
+      error: error.message,
+    });
+  }
+};
