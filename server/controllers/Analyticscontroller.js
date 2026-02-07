@@ -172,3 +172,50 @@ export const getAnalyticsOverview = async (req, res) => {
     });
   }
 };
+
+// Get application trends with granular time data
+export const getApplicationTrends = async (req, res) => {
+  try {
+    const companyId = req.user.id;
+    const { timeRange = "30d", groupBy = "day" } = req.query;
+
+    const dateRanges = {
+      "7d": 7,
+      "30d": 30,
+      "90d": 90,
+      "1y": 365,
+    };
+    const daysAgo = dateRanges[timeRange] || 30;
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - daysAgo);
+
+    // Determine date format based on groupBy
+    const dateFormats = {
+      day: "%Y-%m-%d",
+      week: "%Y-W%V",
+      month: "%Y-%m",
+    };
+
+    const trends = await Application.aggregate([
+      {
+        $match: {
+          company: new mongoose.Types.ObjectId(companyId),
+          appliedDate: { $gte: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            date: {
+              $dateToString: {
+                format: dateFormats[groupBy] || dateFormats.day,
+                date: "$appliedDate",
+              },
+            },
+            status: "$status",
+          },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { "_id.date": 1 } },
+    ]);
