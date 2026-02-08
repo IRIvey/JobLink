@@ -5,14 +5,17 @@ import {
   FileText, 
   Home, 
   User, 
-  Bell, 
   LogOut,
   Plus,
   CheckCircle,
   Search,
   TrendingUp,
 } from "lucide-react";
-import  { useMemo } from "react";
+import { useMemo } from "react";
+
+// ✅ Import NotificationPanel
+import NotificationPanel from "../NotificationPanel";
+
 
 
 // ✅ Import your pages
@@ -30,7 +33,6 @@ const CompanyDashboard = () => {
   const [companyData, setCompanyData] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
-  const [notifications, setNotifications] = useState([]);
 
   // for top search bar (optional - you can pass to pages if needed later)
   const [globalSearch, setGlobalSearch] = useState("");
@@ -39,7 +41,6 @@ const CompanyDashboard = () => {
     fetchCompanyData();
     fetchJobs();
     fetchApplications();
-    fetchNotifications();
   }, []);
 
   const fetchCompanyData = async () => {
@@ -55,24 +56,23 @@ const CompanyDashboard = () => {
     }
   };
 
-const fetchJobs = async () => {
-  try {
-    const token = localStorage.getItem("token");
-    const res = await fetch("http://localhost:5001/api/companies/jobs", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  const fetchJobs = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5001/api/companies/jobs", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    if (!res.ok) return;
+      if (!res.ok) return;
 
-    const data = await res.json();
+      const data = await res.json();
 
-    // ✅ Update jobs state immediately
-    setJobs(data.jobs ?? []);
-  } catch (err) {
-    console.error("Failed to fetch jobs:", err);
-  }
-};
-
+      // ✅ Update jobs state immediately
+      setJobs(data.jobs ?? []);
+    } catch (err) {
+      console.error("Failed to fetch jobs:", err);
+    }
+  };
 
   const fetchApplications = async () => {
     try {
@@ -82,19 +82,6 @@ const fetchJobs = async () => {
       });
       const data = await res.json();
       if (res.ok) setApplications(data.applications || []);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchNotifications = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5001/api/notifications", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (res.ok) setNotifications(data.notifications || []);
     } catch (err) {
       console.error(err);
     }
@@ -171,11 +158,6 @@ const fetchJobs = async () => {
     }
   };
 
-  const hasUnread = useMemo(
-    () => notifications.some((n) => !n.read),
-    [notifications]
-  );
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Top Nav */}
@@ -205,12 +187,8 @@ const fetchJobs = async () => {
             </div>
 
             <div className="flex items-center gap-4">
-              <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
-                <Bell size={24} />
-                {hasUnread && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                )}
-              </button>
+              {/* ✅ REPLACED: Old notification button with NotificationPanel */}
+              <NotificationPanel />
 
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
@@ -309,11 +287,11 @@ const fetchJobs = async () => {
                 </li>
                 <li className="flex items-center gap-2 text-gray-600">
                   <div className="w-2.5 h-2.5 bg-gray-300 rounded-full"></div>
-                  Add skills
+                  Add company info
                 </li>
                 <li className="flex items-center gap-2 text-gray-600">
                   <div className="w-2.5 h-2.5 bg-gray-300 rounded-full"></div>
-                  Upload resume
+                  Post first job
                 </li>
               </ul>
             </div>

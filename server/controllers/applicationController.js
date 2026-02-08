@@ -1,5 +1,7 @@
 import Application from "../models/Application.js";
 import Job from "../models/Job.js";
+import { sendEmail, emailTemplates } from "../utils/emailService.js";
+import { createNotification, notificationTemplates } from "../utils/notificationService.js";
 
 // Get all applications for company's jobs
 export const getCompanyApplications = async (req, res) => {
@@ -11,7 +13,14 @@ export const getCompanyApplications = async (req, res) => {
     const filter = { company: companyId };
     
     if (status && status !== "All") {
-      filter.status = status.toLowerCase();
+      const statusMap = {
+        'New': 'pending',
+        'Reviewing': 'reviewing',
+        'Interview Scheduled': 'interview',
+        'Hired': 'accepted',
+        'Rejected': 'rejected'
+      };
+      filter.status = statusMap[status] || status.toLowerCase();
     }
     
     if (jobId) {
@@ -22,7 +31,7 @@ export const getCompanyApplications = async (req, res) => {
     const applications = await Application.find(filter)
       .populate({
         path: 'jobSeeker',
-        select: 'fullName email phone location skills experience education profilePhoto'
+        select: 'fullName email phone location skills experience education profilePhoto bio certifications'
       })
       .populate({
         path: 'job',
@@ -45,7 +54,7 @@ export const getCompanyApplications = async (req, res) => {
         job: app.job?.title || 'Unknown Position',
         jobId: app.job?._id,
         status: capitalizeStatus(app.status),
-        rating: calculateRating(jobSeeker), // You can implement this
+        rating: calculateRating(jobSeeker),
         experience: calculateExperience(jobSeeker?.experience),
         email: jobSeeker?.email || 'N/A',
         phone: jobSeeker?.phone || 'N/A',
@@ -54,6 +63,7 @@ export const getCompanyApplications = async (req, res) => {
         profilePhoto: jobSeeker?.profilePhoto || '',
         location: jobSeeker?.location || 'N/A',
         coverLetter: app.coverLetter,
+        resume: app.resumeSnapshot?.resumeUrl || '',
         resumeSnapshot: app.resumeSnapshot,
         applicationStatus: app.status,
         statusHistory: app.statusHistory
@@ -135,7 +145,9 @@ export const updateApplicationStatus = async (req, res) => {
     const application = await Application.findOne({
       _id: applicationId,
       company: companyId
-    });
+    })
+      .populate('jobSeeker', 'fullName email')
+      .populate('job', 'title');
 
     if (!application) {
       return res.status(404).json({
@@ -144,12 +156,47 @@ export const updateApplicationStatus = async (req, res) => {
       });
     }
 
+    const oldStatus = application.status;
     application.status = status.toLowerCase();
     if (notes) {
       application.notes = notes;
     }
 
     await application.save();
+
+    // Send email notification to job seeker if status changed
+    if (oldStatus !== application.status) {
+      const emailContent = emailTemplates.statusUpdate({
+        candidateName: application.jobSeeker.fullName,
+        jobTitle: application.job.title,
+        status: capitalizeStatus(application.status),
+      });
+
+      await sendEmail({
+        to: application.jobSeeker.email,
+        subject: emailContent.subject,
+        html: emailContent.html,
+        text: emailContent.text,
+      });
+
+      // Create notification
+      const notifContent = notificationTemplates.applicationStatusUpdate({
+        jobTitle: application.job.title,
+        status: capitalizeStatus(application.status),
+      });
+
+      await createNotification({
+        recipient: application.jobSeeker._id,
+        recipientModel: "JobSeeker",
+        sender: companyId,
+        senderModel: "Company",
+        type: notifContent.type,
+        title: notifContent.title,
+        message: notifContent.message,
+        link: `/applications/${applicationId}`,
+        data: { applicationId, status: application.status },
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -163,6 +210,89 @@ export const updateApplicationStatus = async (req, res) => {
       success: false,
       message: "Failed to update application status",
       error: error.message
+    });
+  }
+};
+
+// Make hiring decision
+export const makeHiringDecision = async (req, res) => {
+  try {
+    const { applicationId, decision, feedback } = req.body;
+    const companyId = req.user.id;
+
+    // Validate decision
+    if (!["accepted", "rejected"].includes(decision)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid decision. Must be 'accepted' or 'rejected'",
+      });
+    }
+
+    const application = await Application.findOne({
+      _id: applicationId,
+      company: companyId,
+    })
+      .populate("jobSeeker", "fullName email")
+      .populate("job", "title");
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Application not found",
+      });
+    }
+
+    // Update application status
+    application.status = decision;
+    if (feedback) {
+      application.notes = feedback;
+    }
+    await application.save();
+
+    // Send email to candidate
+    const emailContent = emailTemplates.hiringDecision({
+      candidateName: application.jobSeeker.fullName,
+      jobTitle: application.job.title,
+      decision,
+      feedback,
+    });
+
+    await sendEmail({
+      to: application.jobSeeker.email,
+      subject: emailContent.subject,
+      html: emailContent.html,
+      text: emailContent.text,
+    });
+
+    // Create notification
+    const notifContent = notificationTemplates.hiringDecision({
+      jobTitle: application.job.title,
+      decision,
+    });
+
+    await createNotification({
+      recipient: application.jobSeeker._id,
+      recipientModel: "JobSeeker",
+      sender: companyId,
+      senderModel: "Company",
+      type: notifContent.type,
+      title: notifContent.title,
+      message: notifContent.message,
+      link: `/applications/${applicationId}`,
+      data: { applicationId, decision },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Candidate ${decision === "accepted" ? "accepted" : "rejected"} successfully`,
+      application,
+    });
+  } catch (error) {
+    console.error("Make hiring decision error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to make hiring decision",
+      error: error.message,
     });
   }
 };
@@ -255,3 +385,11 @@ function calculateRating(jobSeeker) {
   
   return Math.min(rating, 5.0).toFixed(1);
 }
+
+export default {
+  getCompanyApplications,
+  getApplicationDetails,
+  updateApplicationStatus,
+  makeHiringDecision,
+  getApplicationStats,
+};

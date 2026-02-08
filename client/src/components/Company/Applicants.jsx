@@ -5,13 +5,10 @@ import {
   Star,
   Mail,
   Phone,
-  MoreVertical,
   Calendar,
   CheckCircle,
-  Download,
   XCircle,
   MapPin,
-  Award,
   MessageSquare,
   X,
   Eye,
@@ -28,22 +25,12 @@ const ResumeViewerModal = ({ resumeUrl, candidateName, onClose }) => {
           <h2 className="text-2xl font-bold text-gray-900">
             Resume - {candidateName}
           </h2>
-          <div className="flex gap-3">
-            <a
-              href={resumeUrl}
-              download
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2"
-            >
-              <Download size={18} />
-              Download
-            </a>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <X size={24} />
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <X size={24} />
+          </button>
         </div>
         <div className="flex-1 overflow-hidden">
           <iframe
@@ -112,6 +99,7 @@ const InterviewScheduleModal = ({ application, onClose, onSchedule }) => {
                 onChange={(e) =>
                   setInterviewData({ ...interviewData, date: e.target.value })
                 }
+                min={new Date().toISOString().split('T')[0]}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
               />
             </div>
@@ -229,6 +217,10 @@ const HiringDecisionModal = ({ application, onClose, onDecide }) => {
   const [feedback, setFeedback] = useState("");
 
   const handleDecide = () => {
+    if (!feedback.trim()) {
+      alert("Please provide feedback for the candidate");
+      return;
+    }
     onDecide({ decision, feedback });
   };
 
@@ -297,7 +289,7 @@ const HiringDecisionModal = ({ application, onClose, onDecide }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Feedback (will be sent to candidate)
+              Feedback (will be sent to candidate) *
             </label>
             <textarea
               rows={4}
@@ -324,7 +316,7 @@ const HiringDecisionModal = ({ application, onClose, onDecide }) => {
                 : "bg-red-600 hover:bg-red-700"
             }`}
           >
-            Confirm Decision
+            {decision === "accepted" ? "Accept Candidate" : "Reject Candidate"}
           </button>
         </div>
       </div>
@@ -367,6 +359,14 @@ const EmailTemplateModal = ({ application, onClose, onSend }) => {
       body: template.body,
     });
   }, [emailData.template]);
+
+  const handleSend = () => {
+    if (!emailData.subject.trim() || !emailData.body.trim()) {
+      alert("Please fill in subject and message");
+      return;
+    }
+    onSend(emailData);
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -444,7 +444,7 @@ const EmailTemplateModal = ({ application, onClose, onSend }) => {
             Cancel
           </button>
           <button
-            onClick={() => onSend(emailData)}
+            onClick={handleSend}
             className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2"
           >
             <Send size={18} />
@@ -598,14 +598,15 @@ const Applicants = () => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        alert("Interview scheduled successfully!");
+        alert("Interview scheduled successfully! Email notification sent to candidate.");
         setShowInterviewModal(false);
-        await handleStatusUpdate(selectedApplication.id, "Interview Scheduled");
-        fetchApplications();
+        await fetchApplications();
+        fetchStats();
       } else {
         alert(data?.message || "Failed to schedule interview");
       }
-    } catch {
+    } catch (error) {
+      console.error("Schedule interview error:", error);
       alert("Failed to schedule interview");
     }
   };
@@ -628,15 +629,15 @@ const Applicants = () => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        alert("Decision saved successfully!");
+        alert(`Candidate ${decisionData.decision === 'accepted' ? 'accepted' : 'rejected'} successfully! Email notification sent.`);
         setShowHiringModal(false);
-        const newStatus = decisionData.decision === "accepted" ? "Hired" : "Rejected";
-        await handleStatusUpdate(selectedApplication.id, newStatus);
-        fetchApplications();
+        await fetchApplications();
+        fetchStats();
       } else {
         alert(data?.message || "Failed to save decision");
       }
-    } catch {
+    } catch (error) {
+      console.error("Hiring decision error:", error);
       alert("Failed to save decision");
     }
   };
@@ -653,7 +654,8 @@ const Applicants = () => {
         body: JSON.stringify({
           applicationId: selectedApplication.id,
           recipientEmail: selectedApplication.email,
-          ...emailData,
+          subject: emailData.subject,
+          body: emailData.body,
         }),
       });
 
@@ -665,7 +667,8 @@ const Applicants = () => {
       } else {
         alert(data?.message || "Failed to send email");
       }
-    } catch {
+    } catch (error) {
+      console.error("Send email error:", error);
       alert("Failed to send email");
     }
   };
@@ -824,7 +827,6 @@ const Applicants = () => {
 
                       <p className="text-sm text-gray-700 mb-3 font-medium truncate">{app.job}</p>
 
-                      {/* ✅ PLAIN SKILLS DISPLAY */}
                       <p className="text-xs text-gray-600 mb-3 line-clamp-1">
                         {app.skills.slice(0, 5).join(' • ')}
                         {app.skills.length > 5 && ` • +${app.skills.length - 5} more`}
@@ -929,22 +931,15 @@ const Applicants = () => {
                       </div>
                     )}
 
-                    {/* Enhanced Action Buttons */}
+                    {/* Action Buttons */}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
                       <button 
-                        onClick={() => setShowResumeModal(true)}
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-semibold text-sm"
+                        onClick={() => selectedApplication.resume && setShowResumeModal(true)}
+                        disabled={!selectedApplication.resume}
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
                       >
                         <Eye size={18} />
                         View Resume
-                      </button>
-
-                      <button 
-                        onClick={() => window.open(selectedApplication.resume, '_blank')}
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold text-sm"
-                      >
-                        <Download size={18} />
-                        Download
                       </button>
 
                       <button 
@@ -965,18 +960,10 @@ const Applicants = () => {
 
                       <button 
                         onClick={() => setShowHiringModal(true)}
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold shadow-sm text-sm"
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold shadow-sm text-sm col-span-2 md:col-span-3"
                       >
                         <UserCheck size={18} />
-                        Hiring Decision
-                      </button>
-
-                      <button 
-                        onClick={() => handleStatusUpdate(selectedApplication.id, "Rejected")}
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors font-semibold text-sm"
-                      >
-                        <XCircle size={18} />
-                        Reject
+                        Make Hiring Decision
                       </button>
                     </div>
 
@@ -1040,10 +1027,10 @@ const Applicants = () => {
       </div>
 
       {/* Modals */}
-      {showResumeModal && selectedApplication && (
+      {showResumeModal && selectedApplication && selectedApplication.resume && (
         <ResumeViewerModal
-          resumeUrl={selectedApplication.resume || ""}
-          candidateName={selectedApplication.name || "Candidate"}
+          resumeUrl={selectedApplication.resume}
+          candidateName={selectedApplication.name}
           onClose={() => setShowResumeModal(false)}
         />
       )}

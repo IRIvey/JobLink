@@ -5,13 +5,10 @@ import {
   User, 
   FileText, 
   Search, 
-  Bell, 
   LogOut,
   Home,
   Bookmark,
-  Settings,
   MessageSquare,
-  Users
 } from 'lucide-react';
 
 import JobSeekerProfile from './JobSeekerProfile'; 
@@ -19,18 +16,18 @@ import JobSearch from './JobSearch';
 import Applications from './Applications';  
 import SavedJobs from './SavedJobs';    
 import JobRecommendations from './JobRecommendations';
-import ChatInterface from './ChatInterface'; // Add this line
+import ChatInterface from './ChatInterface';
+import NotificationPanel from "../NotificationPanel";
+
 
 
 const JobSeekerDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('home');
   const [userData, setUserData] = useState(null);
-  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     fetchUserData();
-    fetchNotifications();
   }, []);
 
   const fetchUserData = async () => {
@@ -50,13 +47,6 @@ const JobSeekerDashboard = () => {
     }
   };
 
-  const fetchNotifications = async () => {
-    setNotifications([
-      { id: 1, message: 'New job match found!', read: false },
-      { id: 2, message: 'Application status updated', read: false }
-    ]);
-  };
-
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userType');
@@ -64,7 +54,6 @@ const JobSeekerDashboard = () => {
   };
 
   const handleResumeBuilder = () => {
-    // Navigate to resume builder route
     navigate('/resume-builder');
   };
 
@@ -77,17 +66,17 @@ const JobSeekerDashboard = () => {
     { id: 'profile', label: 'Profile', icon: User },
   ];
 
-const renderContent = () => {
-  switch (activeTab) {
-    case 'home': return <JobRecommendations userData={userData} />;
-    case 'search': return <JobSearch userData={userData} />;
-    case 'applications': return <Applications userData={userData} />;
-    case 'saved': return <SavedJobs userData={userData} />;
-    case 'profile': return <JobSeekerProfile userData={userData} onUpdate={fetchUserData} />;
-    case 'messages': return <ChatInterface userData={userData} />; // Add this line
-    default: return <JobRecommendations userData={userData} />;
-  }
-};
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'home': return <JobRecommendations userData={userData} />;
+      case 'search': return <JobSearch userData={userData} />;
+      case 'applications': return <Applications userData={userData} />;
+      case 'saved': return <SavedJobs userData={userData} />;
+      case 'profile': return <JobSeekerProfile userData={userData} onUpdate={fetchUserData} />;
+      case 'messages': return <ChatInterface userData={userData} />;
+      default: return <JobRecommendations userData={userData} />;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -115,21 +104,20 @@ const renderContent = () => {
 
             {/* Right Side Icons */}
             <div className="flex items-center gap-4">
-              {/* Notifications */}
-              <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
-                <Bell size={24} />
-                {notifications.filter(n => !n.read).length > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                )}
-              </button>
+              {/* Notifications - Now using NotificationPanel component */}
+              <NotificationPanel />
 
-          {/* Messages */}
-<button 
-  onClick={() => setActiveTab('messages')} // Add this line
-  className={`p-2 rounded-lg ${activeTab === 'messages' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
->
-  <MessageSquare size={24} />
-</button>
+              {/* Messages */}
+              <button 
+                onClick={() => setActiveTab('messages')}
+                className={`p-2 rounded-lg transition-colors ${
+                  activeTab === 'messages' 
+                    ? 'bg-indigo-100 text-indigo-600' 
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                <MessageSquare size={24} />
+              </button>
 
               {/* Profile Dropdown */}
               <div className="flex items-center gap-2">
