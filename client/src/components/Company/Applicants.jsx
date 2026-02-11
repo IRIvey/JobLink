@@ -27,8 +27,6 @@ import {
   Languages,
 } from "lucide-react";
 
-
-
 /* ================= JOB SEEKER PROFILE MODAL ================= */
 const JobSeekerProfileModal = ({ jobSeekerId, onClose }) => {
   const [profile, setProfile] = useState(null);
@@ -95,7 +93,7 @@ const JobSeekerProfileModal = ({ jobSeekerId, onClose }) => {
               />
             )}
           </div>
-          
+
           <button
             onClick={onClose}
             className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-lg hover:bg-gray-100"
@@ -122,7 +120,7 @@ const JobSeekerProfileModal = ({ jobSeekerId, onClose }) => {
 
               <div className="flex-1 mt-16 md:mt-4">
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">{profile.fullName}</h2>
-                
+
                 <div className="flex flex-wrap gap-4 text-gray-600 mb-4">
                   {profile.location && (
                     <div className="flex items-center gap-1">
@@ -147,7 +145,7 @@ const JobSeekerProfileModal = ({ jobSeekerId, onClose }) => {
                 {/* Social Links */}
                 <div className="flex flex-wrap gap-3">
                   {profile.resume?.personalInfo?.linkedin && (
-                    
+                    <a
                       href={profile.resume.personalInfo.linkedin}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -157,7 +155,7 @@ const JobSeekerProfileModal = ({ jobSeekerId, onClose }) => {
                     </a>
                   )}
                   {profile.resume?.personalInfo?.github && (
-                    
+                    <a
                       href={profile.resume.personalInfo.github}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -167,7 +165,7 @@ const JobSeekerProfileModal = ({ jobSeekerId, onClose }) => {
                     </a>
                   )}
                   {profile.resume?.personalInfo?.website && (
-                    
+                    <a
                       href={profile.resume.personalInfo.website}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -284,7 +282,7 @@ const JobSeekerProfileModal = ({ jobSeekerId, onClose }) => {
                     )}
                     <div className="flex gap-3 mt-2">
                       {cert.credentialUrl && (
-                        
+                        <a
                           href={cert.credentialUrl}
                           target="_blank"
                           rel="noopener noreferrer"
@@ -294,7 +292,7 @@ const JobSeekerProfileModal = ({ jobSeekerId, onClose }) => {
                         </a>
                       )}
                       {cert.certificateImageUrl && (
-                        
+                        <a
                           href={cert.certificateImageUrl}
                           target="_blank"
                           rel="noopener noreferrer"
@@ -328,7 +326,7 @@ const JobSeekerProfileModal = ({ jobSeekerId, onClose }) => {
                       </p>
                     )}
                     {proj.link && (
-                      
+                      <a
                         href={proj.link}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -367,6 +365,8 @@ const JobSeekerProfileModal = ({ jobSeekerId, onClose }) => {
     </div>
   );
 };
+
+/* ================= ENHANCED RESUME VIEWER MODAL ================= */
 const ResumeViewerModal = ({ resumeUrl, candidateName, onClose }) => {
   const handleDownload = () => {
     const link = document.createElement("a");
@@ -839,6 +839,8 @@ const Applicants = () => {
 
   // Modal states
   const [showResumeModal, setShowResumeModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedJobSeekerId, setSelectedJobSeekerId] = useState(null);
   const [showInterviewModal, setShowInterviewModal] = useState(false);
   const [showHiringModal, setShowHiringModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -1063,6 +1065,13 @@ const Applicants = () => {
       "Hired": "bg-purple-100 text-purple-700",
     };
     return colors[status] || "bg-gray-100 text-gray-700";
+  };
+
+  const handleProfileClick = (application) => {
+    // Get the jobSeeker ID from the application
+    const jobSeekerId = application._id || application.jobSeekerId || application.id;
+    setSelectedJobSeekerId(jobSeekerId);
+    setShowProfileModal(true);
   };
 
   return (
@@ -1425,6 +1434,16 @@ const Applicants = () => {
           application={selectedApplication}
           onClose={() => setShowEmailModal(false)}
           onSend={handleSendEmail}
+        />
+      )}
+
+      {showProfileModal && selectedJobSeekerId && (
+        <JobSeekerProfileModal
+          jobSeekerId={selectedJobSeekerId}
+          onClose={() => {
+            setShowProfileModal(false);
+            setSelectedJobSeekerId(null);
+          }}
         />
       )}
     </div>
