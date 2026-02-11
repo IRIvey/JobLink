@@ -367,12 +367,111 @@ const JobSeekerProfileModal = ({ jobSeekerId, onClose }) => {
 };
 
 /* ================= ENHANCED RESUME VIEWER MODAL ================= */
+/* ================= ENHANCED RESUME VIEWER MODAL ================= */
+/* ================= ENHANCED RESUME VIEWER MODAL ================= */
 const ResumeViewerModal = ({ resumeUrl, candidateName, onClose }) => {
+  const [pdfUrl, setPdfUrl] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+
+  useEffect(() => {
+    let objectUrl = null;
+
+    const loadResume = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        console.log("=== Resume Viewer Debug ===");
+        console.log("resumeUrl received:", resumeUrl);
+        console.log("resumeUrl type:", typeof resumeUrl);
+
+        const token = localStorage.getItem("token");
+
+        // Check if resumeUrl is the resume object (built with resume builder)
+        if (typeof resumeUrl === 'object' && resumeUrl.personalInfo) {
+          console.log("✅ Resume is structured data, generating PDF via export endpoint...");
+          
+          // Call the existing export endpoint with the resume data
+          const response = await fetch(`${API_URL}/api/resume/generate-pdf`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ 
+              resume: resumeUrl,
+              color: '#2563eb' // Default blue color
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to generate PDF (${response.status})`);
+          }
+
+          const blob = await response.blob();
+          objectUrl = URL.createObjectURL(blob);
+          setPdfUrl(objectUrl);
+        } 
+        // It's an uploaded PDF file URL
+        else if (typeof resumeUrl === 'string' || (typeof resumeUrl === 'object' && (resumeUrl.fileUrl || resumeUrl.url))) {
+          console.log("✅ Resume is a file URL, fetching...");
+          
+          const finalUrl = typeof resumeUrl === 'string' ? resumeUrl : 
+                          resumeUrl?.fileUrl || resumeUrl?.url || '';
+          
+          if (!finalUrl || finalUrl.trim() === '') {
+            throw new Error("Resume file URL is empty");
+          }
+
+          const fetchUrl = finalUrl.startsWith('http') ? finalUrl : `${API_URL}${finalUrl}`;
+          console.log("Fetching from:", fetchUrl);
+          
+          const response = await fetch(fetchUrl, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to load resume file (${response.status})`);
+          }
+
+          const blob = await response.blob();
+          objectUrl = URL.createObjectURL(blob);
+          setPdfUrl(objectUrl);
+        } 
+        else {
+          throw new Error("Invalid resume data format");
+        }
+
+      } catch (err) {
+        console.error("❌ Resume load error:", err);
+        setError(err.message || "Failed to load resume");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (resumeUrl) {
+      loadResume();
+    } else {
+      setError("No resume data provided");
+      setLoading(false);
+    }
+
+    return () => {
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [resumeUrl, API_URL]);
+
   const handleDownload = () => {
+    if (!pdfUrl) return;
+    
     const link = document.createElement("a");
-    link.href = resumeUrl;
+    link.href = pdfUrl;
     link.download = `${candidateName.replace(/\s+/g, "_")}_Resume.pdf`;
-    link.target = "_blank";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -388,10 +487,11 @@ const ResumeViewerModal = ({ resumeUrl, candidateName, onClose }) => {
           <div className="flex items-center gap-3">
             <button
               onClick={handleDownload}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              disabled={!pdfUrl || loading}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               <Download size={18} />
-              Download
+              Download PDF
             </button>
             <button
               onClick={onClose}
@@ -401,12 +501,37 @@ const ResumeViewerModal = ({ resumeUrl, candidateName, onClose }) => {
             </button>
           </div>
         </div>
+
         <div className="flex-1 overflow-hidden">
-          <iframe
-            src={resumeUrl}
-            className="w-full h-full"
-            title="Resume Viewer"
-          />
+          {loading && (
+            <div className="h-full flex flex-col items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 border-t-indigo-600 mb-4"></div>
+              <p className="text-gray-600">Generating PDF resume...</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="h-full flex flex-col items-center justify-center p-8">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md text-center">
+                <p className="text-red-600 font-semibold mb-2">Failed to Load Resume</p>
+                <p className="text-red-500 text-sm mb-4">{error}</p>
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!loading && !error && pdfUrl && (
+            <iframe
+              src={pdfUrl}
+              className="w-full h-full"
+              title="Resume Viewer"
+            />
+          )}
         </div>
       </div>
     </div>
@@ -1068,14 +1193,20 @@ const Applicants = () => {
   };
 
 const handleProfileClick = (application) => {
-  const jobSeekerId = application.jobSeeker; // ✅ Now this will have the ObjectId
+  console.log("=== Profile Click Debug ===");
+  console.log("Full application object:", application);
+  console.log("jobSeeker field:", application.jobSeeker);
+  console.log("jobSeeker type:", typeof application.jobSeeker);
+  
+  const jobSeekerId = application.jobSeeker;
 
   if (!jobSeekerId) {
-    console.log("application payload missing jobSeeker:", application);
+    console.log("❌ No jobSeeker ID found");
     alert("Job seeker id missing in application data");
     return;
   }
 
+  console.log("✅ Opening profile for ID:", jobSeekerId);
   setSelectedJobSeekerId(jobSeekerId);
   setShowProfileModal(true);
 };
