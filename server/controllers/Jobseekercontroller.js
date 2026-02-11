@@ -1,7 +1,35 @@
-import JobSeeker from "../models/Job.js";
 import Job from "../models/Job.js";
+import JobSeeker from "../models/JobSeeker.js";
 import Application from "../models/Application.js";
 
+
+
+export const getJobSeekerProfile = async (req, res) => {
+  try {
+    const { jobSeekerId } = req.params;
+
+    const jobSeeker = await JobSeeker.findById(jobSeekerId).select("-password");
+
+    if (!jobSeeker) {
+      return res.status(404).json({
+        success: false,
+        message: "Job seeker not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      jobSeeker,
+    });
+  } catch (error) {
+    console.error("Get job seeker profile error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch job seeker profile",
+      error: error.message,
+    });
+  }
+};
 // @desc    Search Jobs with Filters
 // @route   GET /api/jobseeker/jobs/search
 // @access  Private (JobSeeker only)
@@ -489,6 +517,11 @@ export const withdrawApplication = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+
+
+
+
 
 // @desc    Get Dashboard Statistics
 // @route   GET /api/jobseeker/stats
