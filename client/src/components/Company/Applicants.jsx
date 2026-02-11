@@ -14,10 +14,370 @@ import {
   Eye,
   UserCheck,
   Send,
+  Download,
+  Briefcase,
+  GraduationCap,
+  Award,
+  Code,
+  User,
+  Linkedin,
+  Github,
+  Globe,
+  ExternalLink,
+  Languages,
 } from "lucide-react";
 
-/* ================= RESUME VIEWER MODAL ================= */
+
+
+/* ================= JOB SEEKER PROFILE MODAL ================= */
+const JobSeekerProfileModal = ({ jobSeekerId, onClose }) => {
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_URL}/api/jobseekers/${jobSeekerId}/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          setProfile(data.jobSeeker);
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [jobSeekerId, API_URL]);
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl p-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 border-t-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl p-8">
+          <p className="text-red-600">Failed to load profile</p>
+          <button onClick={onClose} className="mt-4 px-4 py-2 bg-gray-200 rounded-lg">
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl max-w-4xl w-full my-8 max-h-[90vh] overflow-y-auto">
+        {/* Header with Cover Photo */}
+        <div className="relative">
+          <div className="h-48 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-t-xl">
+            {profile.coverPhoto && (
+              <img
+                src={profile.coverPhoto}
+                alt="Cover"
+                className="w-full h-full object-cover rounded-t-xl"
+              />
+            )}
+          </div>
+          
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-lg hover:bg-gray-100"
+          >
+            <X size={24} className="text-gray-700" />
+          </button>
+
+          {/* Profile Photo & Basic Info */}
+          <div className="px-8 pb-6">
+            <div className="flex flex-col md:flex-row gap-6 -mt-16">
+              <div className="flex-shrink-0">
+                {profile.profilePhoto ? (
+                  <img
+                    src={profile.profilePhoto}
+                    alt={profile.fullName}
+                    className="w-32 h-32 rounded-2xl object-cover border-4 border-white shadow-xl"
+                  />
+                ) : (
+                  <div className="w-32 h-32 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-bold text-4xl border-4 border-white shadow-xl">
+                    {profile.fullName?.[0]?.toUpperCase() || "U"}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-1 mt-16 md:mt-4">
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">{profile.fullName}</h2>
+                
+                <div className="flex flex-wrap gap-4 text-gray-600 mb-4">
+                  {profile.location && (
+                    <div className="flex items-center gap-1">
+                      <MapPin size={16} />
+                      {profile.location}
+                    </div>
+                  )}
+                  {profile.email && (
+                    <div className="flex items-center gap-1">
+                      <Mail size={16} />
+                      {profile.email}
+                    </div>
+                  )}
+                  {profile.phone && (
+                    <div className="flex items-center gap-1">
+                      <Phone size={16} />
+                      {profile.phone}
+                    </div>
+                  )}
+                </div>
+
+                {/* Social Links */}
+                <div className="flex flex-wrap gap-3">
+                  {profile.resume?.personalInfo?.linkedin && (
+                    
+                      href={profile.resume.personalInfo.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-blue-600 hover:underline"
+                    >
+                      <Linkedin size={18} /> LinkedIn
+                    </a>
+                  )}
+                  {profile.resume?.personalInfo?.github && (
+                    
+                      href={profile.resume.personalInfo.github}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-gray-700 hover:underline"
+                    >
+                      <Github size={18} /> GitHub
+                    </a>
+                  )}
+                  {profile.resume?.personalInfo?.website && (
+                    
+                      href={profile.resume.personalInfo.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-indigo-600 hover:underline"
+                    >
+                      <Globe size={18} /> Website
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Bio */}
+            {(profile.bio || profile.resume?.personalInfo?.summary) && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <p className="text-gray-700 leading-relaxed">
+                  {profile.bio || profile.resume.personalInfo.summary}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Content Sections */}
+        <div className="px-8 pb-8 space-y-6">
+          {/* Skills */}
+          {profile.resume?.skills && profile.resume.skills.length > 0 && (
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <Code className="text-indigo-600" size={24} />
+                Skills
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {profile.resume.skills.map((skill, idx) => (
+                  <span
+                    key={idx}
+                    className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium"
+                  >
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Experience */}
+          {profile.resume?.experience && profile.resume.experience.length > 0 && (
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <Briefcase className="text-blue-600" size={24} />
+                Experience
+              </h3>
+              <div className="space-y-4">
+                {profile.resume.experience.map((exp, idx) => (
+                  <div key={idx} className="border-l-4 border-blue-500 pl-4">
+                    <h4 className="font-bold text-gray-900">{exp.position}</h4>
+                    <p className="text-blue-600 font-medium">{exp.company}</p>
+                    {exp.location && <p className="text-sm text-gray-600">{exp.location}</p>}
+                    <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
+                      <Calendar size={14} />
+                      {exp.startDate} - {exp.current ? "Present" : exp.endDate}
+                    </p>
+                    {exp.description && (
+                      <p className="text-gray-700 mt-2 text-sm leading-relaxed">{exp.description}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Education */}
+          {profile.resume?.education && profile.resume.education.length > 0 && (
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <GraduationCap className="text-green-600" size={24} />
+                Education
+              </h3>
+              <div className="space-y-4">
+                {profile.resume.education.map((edu, idx) => (
+                  <div key={idx} className="border-l-4 border-green-500 pl-4">
+                    <h4 className="font-bold text-gray-900">
+                      {edu.degree} {edu.field && `in ${edu.field}`}
+                    </h4>
+                    <p className="text-green-600 font-medium">{edu.institution}</p>
+                    {edu.location && <p className="text-sm text-gray-600">{edu.location}</p>}
+                    <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
+                      <Calendar size={14} />
+                      {edu.startDate} - {edu.endDate}
+                    </p>
+                    {edu.gpa && <p className="text-sm text-gray-700 mt-1">GPA: {edu.gpa}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Certifications */}
+          {profile.resume?.certifications && profile.resume.certifications.length > 0 && (
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <Award className="text-amber-600" size={24} />
+                Certifications
+              </h3>
+              <div className="space-y-3">
+                {profile.resume.certifications.map((cert, idx) => (
+                  <div key={idx} className="border-l-4 border-amber-500 pl-4">
+                    <h4 className="font-bold text-gray-900">{cert.title}</h4>
+                    <p className="text-amber-600 font-medium">
+                      {cert.issuingOrg} {cert.issueDate && `• ${cert.issueDate}`}
+                    </p>
+                    {cert.credentialId && (
+                      <p className="text-sm text-gray-500 mt-1">ID: {cert.credentialId}</p>
+                    )}
+                    <div className="flex gap-3 mt-2">
+                      {cert.credentialUrl && (
+                        
+                          href={cert.credentialUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                        >
+                          <ExternalLink size={14} /> View Credential
+                        </a>
+                      )}
+                      {cert.certificateImageUrl && (
+                        
+                          href={cert.certificateImageUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                        >
+                          🖼️ View Certificate
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Projects */}
+          {profile.resume?.projects && profile.resume.projects.length > 0 && (
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <FileText className="text-purple-600" size={24} />
+                Projects
+              </h3>
+              <div className="space-y-4">
+                {profile.resume.projects.map((proj, idx) => (
+                  <div key={idx} className="border-l-4 border-purple-500 pl-4">
+                    <h4 className="font-bold text-gray-900">{proj.name}</h4>
+                    <p className="text-gray-700 mt-1 text-sm">{proj.description}</p>
+                    {proj.technologies && (
+                      <p className="text-sm text-gray-600 mt-2">
+                        <span className="font-semibold">Technologies:</span> {proj.technologies}
+                      </p>
+                    )}
+                    {proj.link && (
+                      
+                        href={proj.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-purple-600 hover:underline flex items-center gap-1 mt-2"
+                      >
+                        <ExternalLink size={14} /> View Project
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Languages */}
+          {profile.resume?.languages && profile.resume.languages.length > 0 && (
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <Languages className="text-pink-600" size={24} />
+                Languages
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                {profile.resume.languages.map((lang, idx) => (
+                  <div key={idx} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="font-medium text-gray-900">{lang.language}</span>
+                    <span className="text-sm px-3 py-1 bg-pink-100 text-pink-700 rounded-full">
+                      {lang.proficiency}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 const ResumeViewerModal = ({ resumeUrl, candidateName, onClose }) => {
+  const handleDownload = () => {
+    const link = document.createElement("a");
+    link.href = resumeUrl;
+    link.download = `${candidateName.replace(/\s+/g, "_")}_Resume.pdf`;
+    link.target = "_blank";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl max-w-4xl w-full h-[90vh] flex flex-col">
@@ -25,12 +385,21 @@ const ResumeViewerModal = ({ resumeUrl, candidateName, onClose }) => {
           <h2 className="text-2xl font-bold text-gray-900">
             Resume - {candidateName}
           </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <X size={24} />
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleDownload}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              <Download size={18} />
+              Download
+            </button>
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <X size={24} />
+            </button>
+          </div>
         </div>
         <div className="flex-1 overflow-hidden">
           <iframe
