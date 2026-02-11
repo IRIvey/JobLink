@@ -26,7 +26,7 @@ export const getCompanyApplications = async (req, res) => {
     const applications = await Application.find(filter)
       .populate({
         path: "jobSeeker",
-        select: "fullName email phone location skills experience education profilePhoto bio certifications resume",
+        select: "fullName email phone location skills experience education profilePhoto coverPhoto bio certifications resume",
       })
       .populate({ path: "job", select: "title location employmentType" })
       .sort({ appliedDate: -1 })
@@ -68,6 +68,8 @@ export const getCompanyApplications = async (req, res) => {
         resumeSnapshot: app.resumeSnapshot,
         applicationStatus: app.status,
         statusHistory: app.statusHistory || [],
+        // ✅ ADD: Include jobSeeker ID for profile viewing
+        jobSeeker: jobSeeker?._id || null,
       };
     });
 
