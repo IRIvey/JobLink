@@ -1,7 +1,7 @@
 import Interview from "../models/Interview.js";
 import Application from "../models/Application.js";
-import { sendEmail, emailTemplates } from "../utils/emailService.js";
-import { createNotification, notificationTemplates } from "../utils/notificationService.js";
+import { sendEmail } from "../utils/emailService.js";
+import { createNotification } from "../utils/notificationService.js";
 
 // Schedule interview
 export const scheduleInterview = async (req, res) => {
@@ -9,7 +9,6 @@ export const scheduleInterview = async (req, res) => {
     const { applicationId, date, time, type, location, notes } = req.body;
     const companyId = req.user.id;
 
-    // Validate required fields
     if (!applicationId || !date || !time) {
       return res.status(400).json({
         success: false,
@@ -17,22 +16,23 @@ export const scheduleInterview = async (req, res) => {
       });
     }
 
-    // Find application
+    // ✅ Must populate company too for the name
     const application = await Application.findOne({
       _id: applicationId,
       company: companyId,
     })
       .populate("jobSeeker", "fullName email")
-      .populate("job", "title");
+      .populate("job", "title _id")
+      .populate("company", "companyName");
 
     if (!application) {
       return res.status(404).json({
         success: false,
-        message: "Application not found",
+        message: "Application not found or you don't have permission",
       });
     }
 
-    // Create interview
+    // Create interview record
     const interview = new Interview({
       application: applicationId,
       jobSeeker: application.jobSeeker._id,
@@ -41,50 +41,68 @@ export const scheduleInterview = async (req, res) => {
       date,
       time,
       type: type || "video",
-      location,
-      notes,
+      location: location || "",
+      notes: notes || "",
     });
 
     await interview.save();
 
-    // Update application status to interview
+    // Update application status to "interview"
     application.status = "interview";
+    application.interviewScheduled = true;
     await application.save();
 
-    // Send email to candidate
-    const emailContent = emailTemplates.interviewInvitation({
-      candidateName: application.jobSeeker.fullName,
-      jobTitle: application.job.title,
-      date,
-      time,
-      type: type || "video",
-      location,
-    });
+    // Format type label for email/notification
+    const typeDisplay =
+      { video: "Video Call", phone: "Phone Call", "in-person": "In-Person" }[type] || type;
+    const locationLabel = type === "video" ? "Meeting Link" : type === "in-person" ? "Location" : null;
+    const companyName = application.company?.companyName || "The Company";
 
+    // ✅ Send detailed email to candidate
     await sendEmail({
       to: application.jobSeeker.email,
-      subject: emailContent.subject,
-      html: emailContent.html,
-      text: emailContent.text,
+      subject: `Interview Scheduled - ${application.job.title}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #4F46E5;">🎉 Interview Scheduled!</h2>
+          <p>Dear <strong>${application.jobSeeker.fullName}</strong>,</p>
+          <p>Your interview for <strong>${application.job.title}</strong> at <strong>${companyName}</strong> has been scheduled.</p>
+          <div style="background:#F3F4F6; padding:20px; border-radius:8px; margin:20px 0; border-left:4px solid #4F46E5;">
+            <h3 style="margin-top:0; color:#374151;">📅 Interview Details</h3>
+            <p style="margin:8px 0;"><strong>Date:</strong> ${date}</p>
+            <p style="margin:8px 0;"><strong>Time:</strong> ${time}</p>
+            <p style="margin:8px 0;"><strong>Format:</strong> ${typeDisplay}</p>
+            ${location && locationLabel ? `<p style="margin:8px 0;"><strong>${locationLabel}:</strong> ${location}</p>` : ""}
+            ${notes ? `<p style="margin:8px 0;"><strong>Notes:</strong> ${notes}</p>` : ""}
+          </div>
+          <p>Please be available at the scheduled time. Best of luck!</p>
+          <p>Best regards,<br><strong>${companyName}</strong></p>
+        </div>
+      `,
+      text: `Interview Scheduled!\n\nDear ${application.jobSeeker.fullName},\n\nYour interview for ${application.job.title} is scheduled.\n\nDate: ${date}\nTime: ${time}\nFormat: ${typeDisplay}\n${location ? `${locationLabel}: ${location}\n` : ""}${notes ? `Notes: ${notes}\n` : ""}\nBest regards,\n${companyName}`,
     });
 
-    // Create notification for job seeker
-    const notifContent = notificationTemplates.interviewScheduled({
-      jobTitle: application.job.title,
-      date,
-      time,
-    });
-
+    // ✅ Create detailed notification with all interview info
     await createNotification({
       recipient: application.jobSeeker._id,
       recipientModel: "JobSeeker",
       sender: companyId,
       senderModel: "Company",
-      type: notifContent.type,
-      title: notifContent.title,
-      message: notifContent.message,
-      link: `/applications/${applicationId}`,
-      data: { interviewId: interview._id, applicationId },
+      type: "interview_scheduled",
+      title: "🎉 Interview Scheduled!",
+      message: `Your interview for ${application.job.title} is on ${date} at ${time} (${typeDisplay})${location ? ` — ${locationLabel}: ${location}` : ""}${notes ? ` — Note: ${notes}` : ""}`,
+      link: `/applications`,
+      data: {
+        interviewId: interview._id,
+        applicationId,
+        jobTitle: application.job.title,
+        date,
+        time,
+        type: typeDisplay,
+        location: location || "",
+        notes: notes || "",
+        companyName,
+      },
     });
 
     res.status(201).json({
@@ -109,24 +127,13 @@ export const getCompanyInterviews = async (req, res) => {
     const { status, page = 1, limit = 20 } = req.query;
 
     const filter = { company: companyId };
-    if (status) {
-      filter.status = status;
-    }
+    if (status) filter.status = status;
 
     const interviews = await Interview.find(filter)
-      .populate({
-        path: "jobSeeker",
-        select: "fullName email phone profilePhoto",
-      })
-      .populate({
-        path: "job",
-        select: "title location",
-      })
-      .populate({
-        path: "application",
-        select: "status",
-      })
-      .sort({ date: -1, time: -1 })
+      .populate("jobSeeker", "fullName email phone profilePhoto")
+      .populate("job", "title location")
+      .populate("application", "status")
+      .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
@@ -140,12 +147,7 @@ export const getCompanyInterviews = async (req, res) => {
       total: count,
     });
   } catch (error) {
-    console.error("Get company interviews error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to retrieve interviews",
-      error: error.message,
-    });
+    res.status(500).json({ success: false, message: "Failed to retrieve interviews", error: error.message });
   }
 };
 
@@ -155,32 +157,18 @@ export const getInterview = async (req, res) => {
     const { interviewId } = req.params;
     const companyId = req.user.id;
 
-    const interview = await Interview.findOne({
-      _id: interviewId,
-      company: companyId,
-    })
+    const interview = await Interview.findOne({ _id: interviewId, company: companyId })
       .populate("jobSeeker", "-password")
       .populate("job")
       .populate("application");
 
     if (!interview) {
-      return res.status(404).json({
-        success: false,
-        message: "Interview not found",
-      });
+      return res.status(404).json({ success: false, message: "Interview not found" });
     }
 
-    res.status(200).json({
-      success: true,
-      interview,
-    });
+    res.status(200).json({ success: true, interview });
   } catch (error) {
-    console.error("Get interview error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to retrieve interview",
-      error: error.message,
-    });
+    res.status(500).json({ success: false, message: "Failed to retrieve interview", error: error.message });
   }
 };
 
@@ -191,21 +179,14 @@ export const updateInterview = async (req, res) => {
     const { date, time, type, location, notes, status } = req.body;
     const companyId = req.user.id;
 
-    const interview = await Interview.findOne({
-      _id: interviewId,
-      company: companyId,
-    })
+    const interview = await Interview.findOne({ _id: interviewId, company: companyId })
       .populate("jobSeeker", "fullName email")
       .populate("job", "title");
 
     if (!interview) {
-      return res.status(404).json({
-        success: false,
-        message: "Interview not found",
-      });
+      return res.status(404).json({ success: false, message: "Interview not found" });
     }
 
-    // Update fields
     if (date) interview.date = date;
     if (time) interview.time = time;
     if (type) interview.type = type;
@@ -215,50 +196,23 @@ export const updateInterview = async (req, res) => {
 
     await interview.save();
 
-    // If rescheduled, send email
     if (date || time) {
-      const emailContent = emailTemplates.interviewInvitation({
-        candidateName: interview.jobSeeker.fullName,
-        jobTitle: interview.job.title,
-        date: interview.date,
-        time: interview.time,
-        type: interview.type,
-        location: interview.location,
-      });
-
-      await sendEmail({
-        to: interview.jobSeeker.email,
-        subject: `[Updated] ${emailContent.subject}`,
-        html: emailContent.html,
-        text: emailContent.text,
-      });
-
-      // Create notification
       await createNotification({
         recipient: interview.jobSeeker._id,
         recipientModel: "JobSeeker",
         sender: companyId,
         senderModel: "Company",
         type: "interview_scheduled",
-        title: "Interview Rescheduled",
-        message: `Your interview for ${interview.job.title} has been rescheduled to ${interview.date} at ${interview.time}`,
-        link: `/applications/${interview.application}`,
-        data: { interviewId: interview._id },
+        title: "📅 Interview Rescheduled",
+        message: `Your interview for ${interview.job.title} has been updated to ${interview.date} at ${interview.time}`,
+        link: `/applications`,
+        data: { interviewId: interview._id, date: interview.date, time: interview.time },
       });
     }
 
-    res.status(200).json({
-      success: true,
-      message: "Interview updated successfully",
-      interview,
-    });
+    res.status(200).json({ success: true, message: "Interview updated successfully", interview });
   } catch (error) {
-    console.error("Update interview error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to update interview",
-      error: error.message,
-    });
+    res.status(500).json({ success: false, message: "Failed to update interview", error: error.message });
   }
 };
 
@@ -269,71 +223,37 @@ export const cancelInterview = async (req, res) => {
     const { reason } = req.body;
     const companyId = req.user.id;
 
-    const interview = await Interview.findOne({
-      _id: interviewId,
-      company: companyId,
-    })
+    const interview = await Interview.findOne({ _id: interviewId, company: companyId })
       .populate("jobSeeker", "fullName email")
       .populate("job", "title");
 
     if (!interview) {
-      return res.status(404).json({
-        success: false,
-        message: "Interview not found",
-      });
+      return res.status(404).json({ success: false, message: "Interview not found" });
     }
 
     interview.status = "cancelled";
     if (reason) interview.notes = `Cancelled: ${reason}`;
     await interview.save();
 
-    // Send cancellation email
     await sendEmail({
       to: interview.jobSeeker.email,
       subject: `Interview Cancelled - ${interview.job.title}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #EF4444;">Interview Cancelled</h2>
-          <p>Dear ${interview.jobSeeker.fullName},</p>
-          <p>We regret to inform you that the interview scheduled for ${interview.date} at ${interview.time} for the position of <strong>${interview.job.title}</strong> has been cancelled.</p>
-          ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
-          <p>We apologize for any inconvenience.</p>
-          <p>Best regards,<br>HR Team</p>
-        </div>
-      `,
-      text: `Dear ${interview.jobSeeker.fullName},\n\nYour interview for ${interview.job.title} scheduled on ${interview.date} at ${interview.time} has been cancelled.\n\n${reason ? 'Reason: ' + reason : ''}\n\nBest regards,\nHR Team`,
+      html: `<div style="font-family:Arial,sans-serif;"><h2 style="color:#EF4444;">Interview Cancelled</h2><p>Dear ${interview.jobSeeker.fullName},</p><p>Your interview for <strong>${interview.job.title}</strong> on ${interview.date} at ${interview.time} has been cancelled.</p>${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ""}<p>Best regards,<br>HR Team</p></div>`,
+      text: `Interview Cancelled\n\nYour interview for ${interview.job.title} has been cancelled.\n${reason ? "Reason: " + reason : ""}`,
     });
 
-    // Create notification
     await createNotification({
       recipient: interview.jobSeeker._id,
       recipientModel: "JobSeeker",
       type: "interview_scheduled",
-      title: "Interview Cancelled",
-      message: `Your interview for ${interview.job.title} has been cancelled`,
-      link: `/applications/${interview.application}`,
+      title: "❌ Interview Cancelled",
+      message: `Your interview for ${interview.job.title} on ${interview.date} at ${interview.time} has been cancelled${reason ? ": " + reason : ""}`,
+      link: `/applications`,
       data: { interviewId: interview._id },
     });
 
-    res.status(200).json({
-      success: true,
-      message: "Interview cancelled successfully",
-      interview,
-    });
+    res.status(200).json({ success: true, message: "Interview cancelled successfully" });
   } catch (error) {
-    console.error("Cancel interview error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to cancel interview",
-      error: error.message,
-    });
+    res.status(500).json({ success: false, message: "Failed to cancel interview", error: error.message });
   }
-};
-
-export default {
-  scheduleInterview,
-  getCompanyInterviews,
-  getInterview,
-  updateInterview,
-  cancelInterview,
 };

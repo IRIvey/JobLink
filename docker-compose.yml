@@ -16,6 +16,14 @@ services:
       - server
     stdin_open: true
     tty: true
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
 
   server:
     build:
@@ -32,6 +40,14 @@ services:
       - NODE_ENV=development
     depends_on:
       - mongo
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
 
   mongo:
     image: mongo:latest
@@ -39,6 +55,14 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
 
 volumes:
   mongo-data:

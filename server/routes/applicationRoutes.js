@@ -6,27 +6,19 @@ import {
   makeHiringDecision,
   getApplicationStats,
 } from "../controllers/applicationController.js";
-import { protect, authorizeCompany } from "../middleware/authMiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// All routes require authentication and company authorization
 router.use(protect);
-router.use(authorizeCompany);
 
-// Get company's applications
+// ✅ IMPORTANT: specific routes must come BEFORE param routes
+// /company/stats must come BEFORE /:applicationId
+
+router.get("/company/stats", getApplicationStats);      // ← must be before /:applicationId
 router.get("/company", getCompanyApplications);
-
-// Get application statistics
-router.get("/company/stats", getApplicationStats);
-
-// Get single application details
 router.get("/:applicationId", getApplicationDetails);
-
-// Update application status
 router.patch("/:applicationId/status", updateApplicationStatus);
-
-// Make hiring decision (accept/reject)
 router.post("/decision", makeHiringDecision);
 
 export default router;

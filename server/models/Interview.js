@@ -35,7 +35,7 @@ const interviewSchema = new mongoose.Schema({
     default: "video",
   },
   location: {
-    type: String, // For in-person or video meeting link
+    type: String,
   },
   notes: {
     type: String,
@@ -55,9 +55,9 @@ const interviewSchema = new mongoose.Schema({
   },
 });
 
-interviewSchema.pre("save", function (next) {
+// ✅ FIXED: Remove next parameter
+interviewSchema.pre("save", function () {
   this.updatedAt = Date.now();
-  next();
 });
 
 export default mongoose.model("Interview", interviewSchema);

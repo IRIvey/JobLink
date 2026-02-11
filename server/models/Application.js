@@ -109,9 +109,8 @@ applicationSchema.index({ company: 1, status: 1 });
 applicationSchema.index({ jobSeeker: 1, status: 1 });
 applicationSchema.index({ appliedDate: -1 });
 
-// ✅ IMPORTANT: use function() { ... } (NOT arrow function)
-// This middleware runs before saving and updates the statusHistory
-applicationSchema.pre("save", function (next) {
+// ✅ FIXED: Removed next parameter and next() call
+applicationSchema.pre("save", function () {
   // Update the updatedAt timestamp
   this.updatedAt = Date.now();
 
@@ -124,8 +123,6 @@ applicationSchema.pre("save", function (next) {
       notes: this.notes || "",
     });
   }
-
-  next();
 });
 
 // Virtual for getting the current status display name
