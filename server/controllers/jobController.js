@@ -1,9 +1,8 @@
 import Job from "../models/Job.js";
 import JobSeeker from "../models/JobSeeker.js";
 import Application from "../models/Application.js";
+import { createNotification } from "../utils/notificationService.js";
 import mongoose from "mongoose";
-
-
 
 //apply jobs
 export const applyToJob = async (req, res) => {
@@ -19,7 +18,11 @@ export const applyToJob = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid job id" });
     }
 
-    const job = await Job.findById(jobId).select("company title location");
+    // ✅ Populate job with more details for notification
+    const job = await Job.findById(jobId)
+      .select("company title location type experience salary")
+      .populate("company", "companyName");
+
     if (!job) {
       return res.status(404).json({ success: false, message: "Job not found" });
     }
@@ -33,17 +36,106 @@ export const applyToJob = async (req, res) => {
       return res.status(400).json({ success: false, message: "Already applied" });
     }
 
+    // ✅ Get job seeker details for notification
+    const jobSeeker = await JobSeeker.findById(userId).select(
+      "fullName email phone location skills experience education profilePhoto resume"
+    );
+
+    if (!jobSeeker) {
+      return res.status(404).json({ success: false, message: "Job seeker profile not found" });
+    }
+
+    // ✅ Get coverLetter from request body if provided
+    const { coverLetter } = req.body;
+
+    // ✅ Snapshot the resume data at time of application
+    const resumeSnapshot = {
+      resumeUrl: jobSeeker.resume?.fileUrl || jobSeeker.resume?.url || "",
+      fileName: jobSeeker.resume?.fileName || "resume.pdf",
+      uploadedAt: jobSeeker.resume?.uploadedAt || new Date(),
+    };
+
+    // Create application with cover letter and resume snapshot
     const appDoc = await Application.create({
       jobSeeker: userId,
       job: jobId,
-      company: job.company,
+      company: job.company._id,
       status: "pending",
+      coverLetter: coverLetter || "",
+      resumeSnapshot: resumeSnapshot,
       appliedDate: new Date(),
+    });
+
+    // ✅ Calculate experience years for notification
+    const calculateTotalExperience = (experienceArray) => {
+      if (!experienceArray || experienceArray.length === 0) return "0 years";
+      let totalMonths = 0;
+      experienceArray.forEach((exp) => {
+        if (exp.startDate) {
+          const start = new Date(exp.startDate);
+          const end = exp.current ? new Date() : exp.endDate ? new Date(exp.endDate) : new Date();
+          const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+          totalMonths += months;
+        }
+      });
+      const years = Math.floor(totalMonths / 12);
+      return years > 0 ? `${years} year${years > 1 ? "s" : ""}` : "< 1 year";
+    };
+
+    const totalExperience = calculateTotalExperience(jobSeeker.experience);
+    const skillsPreview = jobSeeker.skills?.slice(0, 3).join(", ") || "No skills listed";
+    const moreSkills = jobSeeker.skills?.length > 3 ? ` +${jobSeeker.skills.length - 3} more` : "";
+
+    // ✅ Send detailed notification to company (NO EMAIL)
+    await createNotification({
+      recipient: job.company._id,
+      recipientModel: "Company",
+      sender: userId,
+      senderModel: "JobSeeker",
+      type: "new_application",
+      title: "🎯 New Application Received!",
+      message: `${jobSeeker.fullName} applied for ${job.title} • ${totalExperience} experience • Skills: ${skillsPreview}${moreSkills}`,
+      link: `/company/applications`,
+      data: {
+        applicationId: appDoc._id,
+        jobId: job._id,
+        jobTitle: job.title,
+        candidateName: jobSeeker.fullName,
+        candidateEmail: jobSeeker.email,
+        candidatePhone: jobSeeker.phone || "Not provided",
+        candidateLocation: jobSeeker.location || "Not provided",
+        experience: totalExperience,
+        skills: jobSeeker.skills || [],
+        education: jobSeeker.education?.length || 0,
+        profilePhoto: jobSeeker.profilePhoto || "",
+        appliedDate: appDoc.appliedDate,
+        hasCoverLetter: !!coverLetter,
+        hasResume: !!resumeSnapshot.resumeUrl,
+      },
+    });
+
+    // ✅ Send confirmation notification to job seeker
+    await createNotification({
+      recipient: userId,
+      recipientModel: "JobSeeker",
+      sender: job.company._id,
+      senderModel: "Company",
+      type: "application_submitted",
+      title: "✅ Application Submitted Successfully!",
+      message: `Your application for ${job.title} at ${job.company.companyName} has been submitted. The company will review your application and get back to you soon.`,
+      link: `/applications`,
+      data: {
+        applicationId: appDoc._id,
+        jobId: job._id,
+        jobTitle: job.title,
+        companyName: job.company.companyName,
+        appliedDate: appDoc.appliedDate,
+      },
     });
 
     return res.status(201).json({
       success: true,
-      message: "Application submitted",
+      message: "Application submitted successfully",
       application: appDoc,
     });
   } catch (err) {
