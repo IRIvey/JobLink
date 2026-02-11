@@ -28,32 +28,33 @@ import {
 } from "lucide-react";
 
 /* ================= JOB SEEKER PROFILE MODAL ================= */
-const JobSeekerProfileModal = ({ jobSeekerId, onClose }) => {
+const JobSeekerProfileModal = ({ applicationId, onClose }) => {
+
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await fetch(`${API_URL}/api/jobseekers/${jobSeekerId}/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+useEffect(() => {
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `${API_URL}/api/applications/${applicationId}/jobseeker-profile`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-        const data = await res.json();
-        if (data.success) {
-          setProfile(data.jobSeeker);
-        }
-      } catch (error) {
-        console.error("Failed to fetch profile:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      const data = await res.json();
+      if (data.success) setProfile(data.jobSeeker);
+    } catch (error) {
+      console.error("Failed to fetch profile:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchProfile();
-  }, [jobSeekerId, API_URL]);
+  if (applicationId) fetchProfile();
+}, [applicationId, API_URL]);
+
 
   if (loading) {
     return (
@@ -1192,24 +1193,17 @@ const Applicants = () => {
     return colors[status] || "bg-gray-100 text-gray-700";
   };
 
-const handleProfileClick = (application) => {
-  console.log("=== Profile Click Debug ===");
-  console.log("Full application object:", application);
-  console.log("jobSeeker field:", application.jobSeeker);
-  console.log("jobSeeker type:", typeof application.jobSeeker);
-  
-  const jobSeekerId = application.jobSeeker;
+  // ✅ FIXED FUNCTION - Gets the correct jobSeeker ID
 
-  if (!jobSeekerId) {
-    console.log("❌ No jobSeeker ID found");
-    alert("Job seeker id missing in application data");
+const handleProfileClick = (app) => {
+  if (!app?.id) {
+    alert("Application ID missing");
     return;
   }
-
-  console.log("✅ Opening profile for ID:", jobSeekerId);
-  setSelectedJobSeekerId(jobSeekerId);
+  setSelectedJobSeekerId(app.id); // ✅ store applicationId in this state
   setShowProfileModal(true);
 };
+
 
   return (
     <div className="min-h-screen bg-gray-50 pb-8">
@@ -1359,7 +1353,7 @@ const handleProfileClick = (application) => {
               </div>
             </div>
 
-            {/* Detail */}
+          {/* Detail Panel */}
             <div className="col-span-9">
               {selectedApplication ? (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -1367,22 +1361,27 @@ const handleProfileClick = (application) => {
                     {/* Header */}
                     <div className="flex items-start justify-between mb-6 pb-6 border-b">
                       <div className="flex items-center gap-4">
+                        {/* ✅ CLICKABLE PROFILE PHOTO IN DETAIL */}
                         {selectedApplication.profilePhoto ? (
                           <img 
                             src={selectedApplication.profilePhoto} 
                             alt={selectedApplication.name}
-                            className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover"
+                            onClick={() => handleProfileClick(selectedApplication)}
+                            className="w-20 h-20 rounded-full object-cover cursor-pointer hover:ring-4 hover:ring-indigo-300 transition-all"
                           />
                         ) : (
-                          <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-2xl md:text-3xl">
+                          <div 
+                            onClick={() => handleProfileClick(selectedApplication)}
+                            className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-3xl cursor-pointer hover:ring-4 hover:ring-indigo-300 transition-all"
+                          >
                             {selectedApplication.name[0]}
                           </div>
                         )}
                         <div>
-                          <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">{selectedApplication.name}</h2>
-                          <p className="text-gray-600 text-sm md:text-base mb-2">{selectedApplication.job}</p>
+                          <h2 className="text-2xl font-bold text-gray-900 mb-1">{selectedApplication.name}</h2>
+                          <p className="text-gray-600 mb-2">{selectedApplication.job}</p>
 
-                          <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm">
+                          <div className="flex flex-wrap items-center gap-2 text-sm">
                             <div className="flex items-center gap-1 text-yellow-500">
                               <Star size={16} fill="currentColor" />
                               <span className="font-semibold">{selectedApplication.rating}</span>
@@ -1401,17 +1400,10 @@ const handleProfileClick = (application) => {
                           </div>
                         </div>
                       </div>
-
-                      <button 
-                        onClick={() => setSelectedApplication(null)}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
-                      >
-                        <X size={20} className="text-gray-600" />
-                      </button>
                     </div>
 
                     {/* Contact Info */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+                    <div className="grid grid-cols-2 gap-3 mb-6">
                       <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
                         <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
                           <Mail size={18} className="text-indigo-600" />
@@ -1436,7 +1428,7 @@ const handleProfileClick = (application) => {
                     {/* Cover Letter */}
                     {selectedApplication.coverLetter && (
                       <div className="mb-6">
-                        <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2 text-base md:text-lg">
+                        <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
                           <MessageSquare size={18} />
                           Cover Letter
                         </h3>
@@ -1447,7 +1439,7 @@ const handleProfileClick = (application) => {
                     )}
 
                     {/* Action Buttons */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+                    <div className="grid grid-cols-3 gap-3 mb-6">
                       <button 
                         onClick={() => selectedApplication.resume && setShowResumeModal(true)}
                         disabled={!selectedApplication.resume}
@@ -1459,7 +1451,7 @@ const handleProfileClick = (application) => {
 
                       <button 
                         onClick={() => setShowInterviewModal(true)}
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold shadow-sm text-sm"
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold text-sm"
                       >
                         <Calendar size={18} />
                         Schedule Interview
@@ -1467,7 +1459,7 @@ const handleProfileClick = (application) => {
 
                       <button 
                         onClick={() => setShowEmailModal(true)}
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow-sm text-sm"
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm"
                       >
                         <Send size={18} />
                         Send Email
@@ -1475,7 +1467,7 @@ const handleProfileClick = (application) => {
 
                       <button 
                         onClick={() => setShowHiringModal(true)}
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold shadow-sm text-sm col-span-2 md:col-span-3"
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold text-sm col-span-3"
                       >
                         <UserCheck size={18} />
                         Make Hiring Decision
@@ -1484,13 +1476,13 @@ const handleProfileClick = (application) => {
 
                     {/* Status Update */}
                     <div className="border-t pt-5">
-                      <h3 className="font-bold text-gray-900 mb-3 text-base md:text-lg">Update Status</h3>
+                      <h3 className="font-bold text-gray-900 mb-3">Update Status</h3>
                       <div className="flex flex-wrap gap-2">
                         {["New", "Reviewing", "Interview Scheduled", "Rejected", "Hired"].map((status) => (
                           <button
                             key={status}
                             onClick={() => handleStatusUpdate(selectedApplication.id, status)}
-                            className={`px-3 py-2 text-xs md:text-sm rounded-lg transition-all font-semibold ${
+                            className={`px-3 py-2 text-sm rounded-lg transition-all font-semibold ${
                               selectedApplication.status === status
                                 ? "bg-indigo-600 text-white shadow-md"
                                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -1505,10 +1497,10 @@ const handleProfileClick = (application) => {
                     {/* Status History */}
                     {selectedApplication.statusHistory && selectedApplication.statusHistory.length > 0 && (
                       <div className="border-t pt-5 mt-5">
-                        <h3 className="font-bold text-gray-900 mb-3 text-base md:text-lg">Status History</h3>
+                        <h3 className="font-bold text-gray-900 mb-3">Status History</h3>
                         <div className="space-y-2">
                           {selectedApplication.statusHistory.map((history, idx) => (
-                            <div key={idx} className="flex flex-wrap items-center gap-2 md:gap-3 text-xs md:text-sm bg-gray-50 p-3 rounded-lg">
+                            <div key={idx} className="flex flex-wrap items-center gap-3 text-sm bg-gray-50 p-3 rounded-lg">
                               <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${getStatusColor(history.status)}`}>
                                 {history.status}
                               </span>
@@ -1531,7 +1523,7 @@ const handleProfileClick = (application) => {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-full min-h-[400px] flex items-center justify-center p-12">
                   <div className="text-center">
                     <FileText size={56} className="mx-auto text-gray-300 mb-4" />
-                    <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-2">No Application Selected</h3>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No Application Selected</h3>
                     <p className="text-gray-500 text-sm">Select an application from the list to view details</p>
                   </div>
                 </div>
@@ -1549,6 +1541,16 @@ const handleProfileClick = (application) => {
           onClose={() => setShowResumeModal(false)}
         />
       )}
+
+     {showProfileModal && selectedJobSeekerId && (
+  <JobSeekerProfileModal
+    applicationId={selectedJobSeekerId}
+    onClose={() => {
+      setShowProfileModal(false);
+      setSelectedJobSeekerId(null);
+    }}
+  />
+)}
 
       {showInterviewModal && selectedApplication && (
         <InterviewScheduleModal
@@ -1571,16 +1573,6 @@ const handleProfileClick = (application) => {
           application={selectedApplication}
           onClose={() => setShowEmailModal(false)}
           onSend={handleSendEmail}
-        />
-      )}
-
-      {showProfileModal && selectedJobSeekerId && (
-        <JobSeekerProfileModal
-          jobSeekerId={selectedJobSeekerId}
-          onClose={() => {
-            setShowProfileModal(false);
-            setSelectedJobSeekerId(null);
-          }}
         />
       )}
     </div>
