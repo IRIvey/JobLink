@@ -1,6 +1,7 @@
 import express from "express";
 import { protect, authorizeRoles } from "../middleware/authMiddleware.js";
 import {
+  getJobSeekerProfile,
   getProfile,
   updateProfile,
   uploadProfilePhoto,
@@ -24,7 +25,7 @@ import {
   getApplicationDetails,
   withdrawApplication,
   getDashboardStats
-} from "../controllers/JobseekerController.js";
+} from "../controllers/Jobseekercontroller.js";
 
 const router = express.Router();
 
@@ -37,7 +38,7 @@ router.get("/profile", getProfile);
 router.put("/profile", updateProfile);
 router.post("/profile/photo", uploadProfilePhoto);
 router.post("/profile/cover", uploadCoverPhoto);
-
+router.get("/:jobSeekerId/profile", protect, getJobSeekerProfile);
 // Experience routes
 router.post("/experience", addExperience);
 router.put("/experience/:experienceId", updateExperience);
