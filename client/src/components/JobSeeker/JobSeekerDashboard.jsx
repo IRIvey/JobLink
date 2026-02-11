@@ -14,25 +14,43 @@ import {
 import JobSeekerProfile from './JobSeekerProfile'; 
 import JobSearch from './JobSearch';  
 import Applications from './Applications';  
-import SavedJobs from './SavedJobs';    
+import SavedJobs from './SavedJobs';     
 import JobRecommendations from './JobRecommendations';
 import ChatInterface from './ChatInterface';
 import NotificationPanel from "../NotificationPanel";
-
-
+// Import the public profile component
+import CompanyProfilePublic from '../Company/CompanyProfilePublic'; 
 
 const JobSeekerDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('home');
   const [userData, setUserData] = useState(null);
+  // State to track which company profile to view
+  const [selectedCompanyId, setSelectedCompanyId] = useState(null);
 
   useEffect(() => {
     fetchUserData();
   }, []);
 
+  // Sync browser back button with tabs
+  useEffect(() => {
+    const handlePopState = (event) => {
+      if (event.state && event.state.tab) {
+        setActiveTab(event.state.tab);
+        setSelectedCompanyId(event.state.cId || null);
+      } else {
+        setActiveTab('home');
+        setSelectedCompanyId(null);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const fetchUserData = async () => {
     try {
       const token = localStorage.getItem('token');
+      // FIXED SYNTAX ERROR: Added backticks for the template literal below
       const response = await fetch('http://localhost:5001/api/auth/me', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -68,12 +86,29 @@ const JobSeekerDashboard = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'home': return <JobRecommendations userData={userData} />;
+      case 'home': 
+        return (
+          <JobRecommendations 
+            userData={userData} 
+            onViewCompany={(id) => {
+              setSelectedCompanyId(id);
+              setActiveTab('company-view');
+              window.history.pushState({ tab: 'company-view', cId: id }, '', window.location.pathname);
+            }} 
+          />
+        );
       case 'search': return <JobSearch userData={userData} />;
       case 'applications': return <Applications userData={userData} />;
       case 'saved': return <SavedJobs userData={userData} />;
       case 'profile': return <JobSeekerProfile userData={userData} onUpdate={fetchUserData} />;
       case 'messages': return <ChatInterface userData={userData} />;
+      case 'company-view': 
+        return (
+          <CompanyProfilePublic 
+            companyId={selectedCompanyId} 
+            onBack={() => setActiveTab('home')} 
+          />
+        );
       default: return <JobRecommendations userData={userData} />;
     }
   };
@@ -104,10 +139,8 @@ const JobSeekerDashboard = () => {
 
             {/* Right Side Icons */}
             <div className="flex items-center gap-4">
-              {/* Notifications - Now using NotificationPanel component */}
               <NotificationPanel />
 
-              {/* Messages */}
               <button 
                 onClick={() => setActiveTab('messages')}
                 className={`p-2 rounded-lg transition-colors ${
@@ -119,7 +152,6 @@ const JobSeekerDashboard = () => {
                 <MessageSquare size={24} />
               </button>
 
-              {/* Profile Dropdown */}
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
                   {userData?.email?.[0]?.toUpperCase() || 'U'}
@@ -147,7 +179,6 @@ const JobSeekerDashboard = () => {
                 {navigation.map((item) => {
                   const Icon = item.icon;
                   
-                  // Special handling for resume builder
                   if (item.id === 'resume') {
                     return (
                       <button
@@ -185,10 +216,9 @@ const JobSeekerDashboard = () => {
             {renderContent()}
           </main>
 
-          {/* Right Sidebar - Profile Summary & Suggestions */}
+          {/* Right Sidebar */}
           <aside className="w-80 flex-shrink-0">
             <div className="space-y-4 sticky top-20">
-              {/* Profile Completion Card */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h3 className="font-semibold text-gray-900 mb-4">Profile Strength</h3>
                 <div className="mb-3">
@@ -212,7 +242,6 @@ const JobSeekerDashboard = () => {
                   </li>
                 </ul>
                 
-                {/* Quick Resume Builder Access */}
                 <button
                   onClick={handleResumeBuilder}
                   className="w-full mt-4 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2"
@@ -222,7 +251,6 @@ const JobSeekerDashboard = () => {
                 </button>
               </div>
 
-              {/* Quick Stats */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h3 className="font-semibold text-gray-900 mb-4">Quick Stats</h3>
                 <div className="space-y-3">
