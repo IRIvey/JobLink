@@ -14,7 +14,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 
-const JobRecommendations = ({ userData }) => {
+const JobRecommendations = ({ userData, onViewCompany, onClose }) => {
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [savedJobs, setSavedJobs] = useState([]);
@@ -229,6 +229,7 @@ const JobRecommendations = ({ userData }) => {
           </div>
 
           <div className="flex gap-3 pt-4">
+            {/* Apply Now Button */}
             <button
               onClick={() => {
                 setShowApplicationModal(job);
@@ -238,6 +239,26 @@ const JobRecommendations = ({ userData }) => {
             >
               Apply Now
             </button>
+
+            {/* View Profile Button */}
+            <button
+              onClick={() => {
+                const cId = job.companyId || job.company?._id;
+                console.log("Job Object:", job); // Check if company data exists here
+                console.log("Extracted ID:", cId);
+                if (cId && cId !== 'undefined') {
+                  // Use the function passed from the Dashboard instead of window.open
+                  onViewCompany(cId);
+                } else {
+                  alert("Company profile not available");
+                }
+              }}
+              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium flex items-center gap-2 hover:bg-gray-50 transition-colors"
+            >
+              <Building2 size={20} />
+              View Profile
+            </button>
+            {/* Save Job Button */}
             <button
               onClick={() => handleSaveJob(job._id)}
               className={`px-6 py-3 border rounded-lg font-medium flex items-center gap-2 ${

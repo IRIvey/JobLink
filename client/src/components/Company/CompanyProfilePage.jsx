@@ -1,18 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Briefcase, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Link as LinkIcon,
-  Edit2, 
-  Save, 
-  X, 
-  Plus,
-  Camera,
-  Trash,
-  Trash2,
-  Calendar
+  Briefcase, Mail, Phone, MapPin, Link as LinkIcon,
+  Edit2, Save, X, Plus, Camera, Trash, Trash2, Calendar
 } from 'lucide-react';
 
 const INDUSTRIES = [
@@ -22,7 +11,8 @@ const INDUSTRIES = [
   "Consulting","Other"
 ];
 
-const CompanyProfile = ({ companyData, onUpdate }) => {
+// Added isPublicView prop
+const CompanyProfile = ({ companyData, onUpdate, isPublicView = false }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [showModal, setShowModal] = useState(null);
   const [itemForm, setItemForm] = useState({});
@@ -59,30 +49,9 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
   }, [companyData]);
 
   const handleInputChange = (e) => {
+    if (isPublicView) return; // Guard clause
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-
-  // const handleSave = async () => {
-  //   try {
-  //     const response = await fetch(API_BASE, {
-  //       method: 'PUT',
-  //       headers: {
-  //         Authorization: `Bearer ${token}`,
-  //         'Content-Type': 'application/json'
-  //       },
-  //       body: JSON.stringify(formData)
-  //     });
-
-  //     if (response.ok) {
-  //       setIsEditing(false);
-  //       onUpdate?.();
-  //     } else {
-  //       console.error("Update failed:", await response.text());
-  //     }
-  //   } catch (error) {
-  //     console.error("Error updating profile:", error);
-  //   }
-  // };
 
   const handleSave = async () => {
     try {
@@ -122,6 +91,7 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
   };
 
   const handlePhotoUpload = async (e, type) => {
+    if (isPublicView) return;
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -166,6 +136,7 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
   };
 
   const handleAddCompanyItem = async (path) => {
+    if (isPublicView) return;
   const today = new Date().toISOString().split("T")[0]; // current date in YYYY-MM-DD
 
   // --- Validation ---
@@ -217,6 +188,7 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
 
 
   const handleDeleteCompanyItem = async (path, id) => {
+  if (isPublicView) return;
   if (!window.confirm("Are you sure?")) return;
 
   try {
@@ -245,7 +217,7 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
 };
 
   const renderModalForm = () => {
-  if (!showModal) return null;
+  if (!showModal || isPublicView) return null;
 
   const today = new Date().toISOString().split("T")[0]; // Current date in YYYY-MM-DD
 
@@ -331,9 +303,13 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
 
   return (
     <div className="space-y-6">
-      {/* File Inputs */}
-      <input type="file" ref={profileInputRef} className="hidden" accept="image/*" onChange={(e) => handlePhotoUpload(e, 'profile')} />
-      <input type="file" ref={coverInputRef} className="hidden" accept="image/*" onChange={(e) => handlePhotoUpload(e, 'cover')} />
+      {/* File Inputs - HIDDEN in Public View */}
+      {!isPublicView && (
+        <>
+          <input type="file" ref={profileInputRef} className="hidden" accept="image/*" onChange={(e) => handlePhotoUpload(e, 'profile')} />
+          <input type="file" ref={coverInputRef} className="hidden" accept="image/*" onChange={(e) => handlePhotoUpload(e, 'cover')} />
+        </>
+      )}
 
       {/* Cover + Profile + Name + BIO */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden relative">
@@ -343,9 +319,13 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
           ) : (
             <div className="w-full h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
           )}
-          <button className="absolute top-4 right-4 p-2 bg-white/90 rounded-lg hover:bg-white shadow-lg flex items-center gap-1" onClick={() => coverInputRef.current?.click()}>
-            <Camera size={16} />
-          </button>
+          
+          {/* Cover Photo Upload Button - HIDDEN in Public View */}
+          {!isPublicView && (
+            <button className="absolute top-4 right-4 p-2 bg-white/90 rounded-lg hover:bg-white shadow-lg flex items-center gap-1" onClick={() => coverInputRef.current?.click()}>
+              <Camera size={16} />
+            </button>
+          )}
         </div>
 
         <div className="px-8 pb-6 -mt-20 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
@@ -358,41 +338,48 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
                   formData.companyName?.[0]?.toUpperCase() || "C"
                 )}
               </div>
-              <button className="absolute bottom-2 right-2 p-2 bg-white rounded-full shadow-lg border border-gray-200" onClick={() => profileInputRef.current?.click()}>
-                <Camera size={18} className="text-gray-700" />
-              </button>
+              
+              {/* Profile Photo Upload Button - HIDDEN in Public View */}
+              {!isPublicView && (
+                <button className="absolute bottom-2 right-2 p-2 bg-white rounded-full shadow-lg border border-gray-200" onClick={() => profileInputRef.current?.click()}>
+                  <Camera size={18} className="text-gray-700" />
+                </button>
+              )}
             </div>
 
             <div className="flex-1">
-              {isEditing ? (
+              {isEditing && !isPublicView ? (
                 <input type="text" maxLength={50} name="companyName" value={formData.companyName} onChange={handleInputChange} placeholder="Company Name" className="text-3xl font-bold text-gray-900 border-b-2 border-gray-200 focus:border-indigo-500 w-full" />
               ) : (
-                <h1 className="text-3xl font-bold text-gray-900">{formData.companyName || "Add Company Name"}</h1>
+                <h1 className="text-3xl font-bold text-gray-900">{formData.companyName || "Company Name"}</h1>
               )}
             </div>
           </div>
 
-          <div className="flex gap-3 mt-4 md:mt-0">
-            {!isEditing ? (
-              <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 shadow-lg hover:shadow-xl transition-all">
-                <Edit2 size={18} /> Edit Profile
-              </button>
-            ) : (
-              <>
-                <button onClick={handleCancel} className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all">
-                  <X size={14} /> Cancel
+          {/* Action Buttons (Edit/Save/Cancel) - HIDDEN in Public View */}
+          {!isPublicView && (
+            <div className="flex gap-3 mt-4 md:mt-0">
+              {!isEditing ? (
+                <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 shadow-lg transition-all">
+                  <Edit2 size={18} /> Edit Profile
                 </button>
-                <button disabled={JSON.stringify(formData) === JSON.stringify(companyData)} onClick={handleSave} className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                  <Save size={14} /> Save
-                </button>
-              </>
-            )}
-          </div>
+              ) : (
+                <>
+                  <button onClick={handleCancel} className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all">
+                    <X size={14} /> Cancel
+                  </button>
+                  <button disabled={JSON.stringify(formData) === JSON.stringify(companyData)} onClick={handleSave} className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 shadow-lg transition-all">
+                    <Save size={14} /> Save
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="px-8 pb-8">
-          {isEditing ? (
-            <textarea maxLength={1000} name="description" value={formData.description} onChange={handleInputChange} rows={4} placeholder="Write something about your company..." className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none" />
+          {isEditing && !isPublicView ? (
+            <textarea maxLength={1000} name="description" value={formData.description} onChange={handleInputChange} rows={4} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 resize-none" />
           ) : (
             <p className="text-gray-700 text-base leading-relaxed whitespace-pre-line">{formData.description?.trim() ? formData.description : "No company bio added yet."}</p>
           )}
@@ -412,14 +399,14 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
                 <span>{field.charAt(0).toUpperCase() + field.slice(1)}</span>
               </label>
 
-              {isEditing ? (
+              {isEditing && !isPublicView ? (
                 field === 'industry' ? (
-                  <select name="industry" value={formData.industry} onChange={handleInputChange} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                  <select name="industry" value={formData.industry} onChange={handleInputChange} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl">
                     <option value="">Select industry</option>
                     {INDUSTRIES.map((ind) => (<option key={ind} value={ind}>{ind}</option>))}
                   </select>
                 ) : (
-                  <input type={field === 'website' ? 'url' : 'text'} name={field} value={formData[field]} onChange={handleInputChange} placeholder={`Enter ${field}`} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all" />
+                  <input type="text" name={field} value={formData[field]} onChange={handleInputChange} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" />
                 )
               ) : (
                 <p className="text-gray-900 py-3">{formData[field] || 'Not provided'}</p>
@@ -433,49 +420,33 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
       <div className="bg-white rounded-xl shadow-lg border p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold">Certificates</h2>
-          <button
-            className="flex items-center gap-2 text-indigo-600 font-semibold"
-            onClick={() => {
-              setShowModal("certificates");
-              setItemForm({});
-            }}
-          >
-            <Plus size={16} /> Add
-          </button>
+          {/* Add Button - HIDDEN in Public View */}
+          {!isPublicView && (
+            <button className="flex items-center gap-2 text-indigo-600 font-semibold" onClick={() => { setShowModal("certificates"); setItemForm({}); }}>
+              <Plus size={16} /> Add
+            </button>
+          )}
         </div>
 
         <div className="space-y-4">
           {localCompanyData.certificates?.length ? (
             localCompanyData.certificates.map((cert) => (
-              <div
-                key={cert._id}
-                className="group relative border-l-4 border-indigo-500 pl-6 py-3"
-              >
-                <button
-                  type="button"
-                  onClick={() => handleDeleteCompanyItem("certificates", cert._id)}
-                  className="absolute right-0 top-0 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Trash size={16} />
-                </button>
+              <div key={cert._id} className="group relative border-l-4 border-indigo-500 pl-6 py-3">
+                {/* Delete Button - HIDDEN in Public View */}
+                {!isPublicView && (
+                  <button type="button" onClick={() => handleDeleteCompanyItem("certificates", cert._id)} className="absolute right-0 top-0 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Trash size={16} />
+                  </button>
+                )}
 
                 <h3 className="text-lg font-bold text-gray-900">{cert.name}</h3>
-                <p className="text-indigo-600 font-medium">
-                  {cert.awardedBy}
-                </p>
-
-                <div className="mt-1 flex gap-3 flex-wrap">
-                  {cert.link && (
-                    <a
-                      href={cert.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-blue-600 hover:underline flex items-center gap-1"
-                    >
-                      <LinkIcon size={14} /> View Certificate
-                    </a>
-                  )}
-                </div>
+                <p className="text-indigo-600 font-medium">{cert.awardedBy}</p>
+                
+                {cert.link && (
+                  <a href={cert.link} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1">
+                    <LinkIcon size={14} /> View Certificate
+                  </a>
+                )}
 
                 <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
                   <Calendar size={14} />
@@ -495,51 +466,37 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
       <div className="bg-white rounded-xl shadow-lg border p-6 mt-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold">Licenses</h2>
-          <button
-            className="flex items-center gap-2 text-indigo-600 font-semibold"
-            onClick={() => {
-              setShowModal("licenses");
-              setItemForm({});
-            }}
-          >
-            <Plus size={16} /> Add
-          </button>
+          {/* Add Button - HIDDEN in Public View */}
+          {!isPublicView && (
+            <button className="flex items-center gap-2 text-indigo-600 font-semibold" onClick={() => { setShowModal("licenses"); setItemForm({}); }}>
+              <Plus size={16} /> Add
+            </button>
+          )}
         </div>
 
         <div className="space-y-4">
           {localCompanyData.licenses?.length ? (
             localCompanyData.licenses.map((lic) => (
-              <div
-                key={lic._id}
-                className="group relative border-l-4 border-green-500 pl-6 py-3"
-              >
-                <button
-                  type="button"
-                  onClick={() => handleDeleteCompanyItem("licenses", lic._id)}
-                  className="absolute right-0 top-0 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Trash size={16} />
-                </button>
+              <div key={lic._id} className="group relative border-l-4 border-green-500 pl-6 py-3">
+                {/* Delete Button - HIDDEN in Public View */}
+                {!isPublicView && (
+                  <button type="button" onClick={() => handleDeleteCompanyItem("licenses", lic._id)} className="absolute right-0 top-0 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Trash size={16} />
+                  </button>
+                )}
 
                 <h3 className="text-lg font-bold text-gray-900">{lic.name}</h3>
                 <p className="text-indigo-600 font-medium">{lic.issuedBy}</p>
 
                 {lic.fileUrl && (
-                  <a
-                    href={lic.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1"
-                  >
+                  <a href={lic.fileUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1">
                     <LinkIcon size={14} /> View License
                   </a>
                 )}
 
                 <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
                   <Calendar size={14} />
-                  {lic.issueDate
-                    ? `${new Date(lic.issueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })} - ${lic.expiryDate ? new Date(lic.expiryDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : "Present"}`
-                    : ""}
+                  {lic.issueDate ? `${new Date(lic.issueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })} - ${lic.expiryDate ? new Date(lic.expiryDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : "Present"}` : ""}
                 </p>
               </div>
             ))
@@ -551,7 +508,8 @@ const CompanyProfile = ({ companyData, onUpdate }) => {
         </div>
       </div>
 
-      {renderModalForm()}
+      {/* Modal is only rendered if it's NOT public view */}
+      {!isPublicView && renderModalForm()}
     </div>
   );
 };

@@ -7,6 +7,7 @@ import CompanyAuth from "./components/Auth/CompanyAuth.jsx";
 import Home from "./components/Home.jsx";
 import CompanyDashboard from "./components/Company/Companydashboard.jsx";
 import CompanyProfile from "./components/Company/CompanyProfilePage.jsx";
+import CompanyProfilePublic from "./components/Company/CompanyProfilePublic.jsx";
 import PostJob from "./components/Company/PostJob.jsx";
 
 function App() {
@@ -83,6 +84,7 @@ function App() {
           <>
             <Route path="/dashboard" element={<JobSeekerDashboard />} />
             <Route path="/resume-builder" element={<ResumeBuilder />} />
+            <Route path="/company-profile/:id" element={<CompanyProfilePublic />} />
           </>
         )}
 
