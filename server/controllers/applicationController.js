@@ -362,3 +362,70 @@ function calculateRating(jobSeeker) {
   if (jobSeeker?.certifications?.length > 0) rating += 0.2;
   return Math.min(rating, 5.0).toFixed(1);
 }
+
+
+
+
+export const getApplicantProfileForCompany = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+
+    const application = await Application.findById(applicationId)
+      .populate("jobSeeker", "-password")
+      .select("company jobSeeker");
+
+    if (!application) {
+      return res.status(404).json({ success: false, message: "Application not found" });
+    }
+
+    // ✅ Only the company who owns this application can view it
+    if (String(application.company) !== String(req.user.id)) {
+      return res.status(403).json({ success: false, message: "Forbidden" });
+    }
+
+    return res.json({
+      success: true,
+      jobSeeker: application.jobSeeker,
+    });
+  } catch (error) {
+    console.error("getApplicantProfileForCompany error:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// ✅ Resume for company (from applicationId)
+export const getApplicantResumeForCompany = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+
+    const application = await Application.findById(applicationId)
+      .populate("jobSeeker", "resume") // only if you need jobSeeker.resume
+      .select("company resumeSnapshot jobSeeker");
+
+    if (!application) {
+      return res.status(404).json({ success: false, message: "Application not found" });
+    }
+
+    if (String(application.company) !== String(req.user.id)) {
+      return res.status(403).json({ success: false, message: "Forbidden" });
+    }
+
+    // ✅ Best source = snapshot taken at apply time
+    const resumeUrl =
+      application.resumeSnapshot?.resumeUrl ||
+      application.resumeSnapshot?.url ||
+      null;
+
+    // If you never save snapshot and you store resume somewhere else, use it here:
+    // const resumeUrl = application.jobSeeker?.resume?.resumeUrl || null;
+
+    if (!resumeUrl) {
+      return res.status(404).json({ success: false, message: "Resume not found" });
+    }
+
+    return res.json({ success: true, resumeUrl });
+  } catch (error) {
+    console.error("getApplicantResumeForCompany error:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
