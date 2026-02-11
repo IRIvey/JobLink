@@ -1067,12 +1067,18 @@ const Applicants = () => {
     return colors[status] || "bg-gray-100 text-gray-700";
   };
 
-  const handleProfileClick = (application) => {
-    // Get the jobSeeker ID from the application
-    const jobSeekerId = application._id || application.jobSeekerId || application.id;
-    setSelectedJobSeekerId(jobSeekerId);
-    setShowProfileModal(true);
-  };
+const handleProfileClick = (application) => {
+  const jobSeekerId = application.jobSeeker; // ✅ Now this will have the ObjectId
+
+  if (!jobSeekerId) {
+    console.log("application payload missing jobSeeker:", application);
+    alert("Job seeker id missing in application data");
+    return;
+  }
+
+  setSelectedJobSeekerId(jobSeekerId);
+  setShowProfileModal(true);
+};
 
   return (
     <div className="min-h-screen bg-gray-50 pb-8">
