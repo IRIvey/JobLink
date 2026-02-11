@@ -2,6 +2,7 @@ import express from "express";
 import { 
   getCompanyProfile, 
   updateCompanyProfile, 
+  getCompanyProfilePublic,
   createJob, 
   getJobSkillsForCompany, 
   uploadCompanyProfilePhoto, 
@@ -22,6 +23,9 @@ const router = express.Router();
 
 // Get company profile
 router.get("/profile", protect, authorizeRoles("company"), getCompanyProfile);
+
+// Public company profile
+router.get("/profile-public/:id", getCompanyProfilePublic);
 
 // Update company info
 router.put("/profile", protect, authorizeRoles("company"), updateCompanyProfile);

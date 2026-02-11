@@ -20,6 +20,34 @@ export const getCompanyProfile = async (req, res) => {
   }
 };
 
+// --- GET Company Profile Public ---
+export const getCompanyProfilePublic = async (req, res) => {
+  try {
+    const companyId = req.params.id;
+
+    const company = await Company.findById(companyId)
+      .select("-password -email -__v"); // hide private fields
+
+    if (!company) {
+      return res.status(404).json({
+        success: false,
+        message: "Company not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      company,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+
 // --- UPDATE Company Profile ---
 export const updateCompanyProfile = async (req, res) => {
   try {
