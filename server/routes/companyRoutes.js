@@ -4,7 +4,7 @@ import {
   updateCompanyProfile, 
   getCompanyProfilePublic,
   createJob, 
-  getJobSkillsForCompany, 
+  getJobSkillsByCategory, 
   uploadCompanyProfilePhoto, 
   uploadCompanyCoverPhoto, 
   addCompanyCertificate,
@@ -56,7 +56,7 @@ router.delete("/profile/licenses/:licenseId", protect, authorizeRoles("company")
 
 // Jobs
 router.post("/jobs", protect, authorizeRoles("company"), createJob);
-router.get("/skills", protect, authorizeRoles("company"), getJobSkillsForCompany);
+router.get("/skills", protect, authorizeRoles("company"), getJobSkillsByCategory);
 router.get("/jobs", protect, authorizeRoles("company"), getCompanyJobs);
 
 

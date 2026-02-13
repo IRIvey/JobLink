@@ -296,28 +296,49 @@ export const createJob = async (req, res) => {
   }
 };
 
-export const getJobSkillsForCompany = async (req, res) => {
+export const getJobSkillsByCategory = async (req, res) => {
   try {
+    // 1. Check Authorization
     const companyId = req.user?.id;
-    if (!companyId || req.user.userType !== "company")
+    if (!companyId || req.user.userType !== "company") {
       return res.status(401).json({ message: "Unauthorized" });
+    }
 
-    const company = await Company.findById(companyId).select("industry");
-    if (!company) return res.status(404).json({ success: false, message: "Company not found" });
+    // 2. Get the category from query parameters
+    const { category } = req.query;
 
-    const industry = company.industry;
+    if (!category) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Job category is required to fetch skills" 
+      });
+    }
 
+    // 3. Fetch skills based on the selected category
+    // We look up the category in INDUSTRY_SKILLS, fallback to 'Other' if not found
+    const categorySkills = INDUSTRY_SKILLS[category] || INDUSTRY_SKILLS.Other;
+
+    // 4. Combine with Universal Skills and remove duplicates
     const skills = [
       ...new Set([
-        ...(INDUSTRY_SKILLS[industry] || INDUSTRY_SKILLS.Other),
+        ...categorySkills,
         ...INDUSTRY_SKILLS.UNIVERSAL_SKILLS,
       ]),
     ];
 
-    res.status(200).json({ success: true, industry, skills });
+    res.status(200).json({ 
+      success: true, 
+      category, 
+      skills 
+    });
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Failed to fetch skills", error: err.message });
+    console.error("Error fetching category skills:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to fetch skills", 
+      error: err.message 
+    });
   }
 };
 

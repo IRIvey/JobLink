@@ -118,6 +118,19 @@ const jobSchema = new mongoose.Schema({
     required: true
   },
 
+  jobTypeCategory: {
+    type: String,
+    required: [true, "Type of job is required"],
+    trim: true
+  },
+
+  extraSkills: [
+    {
+      type: String,
+      trim: true
+    }
+  ],
+
   experience: {
     type: String,
     required: true,
