@@ -296,6 +296,27 @@ export const createJob = async (req, res) => {
   }
 };
 
+export const getJobCategories = async (req, res) => {
+  try {
+    // 1. Get all keys from your INDUSTRY_SKILLS object
+    // 2. Filter out 'UNIVERSAL_SKILLS' because that's not a category
+    const categories = Object.keys(INDUSTRY_SKILLS).filter(
+      (key) => key !== "UNIVERSAL_SKILLS"
+    );
+
+    res.status(200).json({ 
+      success: true, 
+      categories 
+    });
+  } catch (err) {
+    console.error("Error fetching categories:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to fetch job categories" 
+    });
+  }
+};
+
 export const getJobSkillsByCategory = async (req, res) => {
   try {
     // 1. Check Authorization
