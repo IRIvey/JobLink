@@ -124,13 +124,6 @@ const jobSchema = new mongoose.Schema({
     trim: true
   },
 
-  extraSkills: [
-    {
-      type: String,
-      trim: true
-    }
-  ],
-
   experience: {
     type: String,
     required: true,

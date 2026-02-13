@@ -239,60 +239,127 @@ export const deleteCompanyLicense = async (req, res) => {
 };
 
 // --- Jobs ---
+// export const createJob = async (req, res) => {
+//   try {
+//     const companyId = req.user?.id;
+//     if (!companyId || req.user.userType !== "company")
+//       return res.status(401).json({ message: "Unauthorized" });
+
+//     const company = await Company.findById(companyId);
+//     if (!company) return res.status(404).json({ message: "Company not found" });
+
+//     const industry = company.industry;
+//     let skills = req.body.skills;
+
+//     if (!skills || skills.length === 0) {
+//       skills = INDUSTRY_SKILLS[industry] || INDUSTRY_SKILLS.Other;
+//     } else {
+//       skills = skills.filter((s) => (INDUSTRY_SKILLS[industry] || []).includes(s));
+//     }
+
+  
+//     let salaryInput = req.body.salary;
+//     let salary = { min: 0, max: 0, currency: "USD" };
+
+//     if (salaryInput) {
+//       const numbers = salaryInput
+//         .replace(/\$/g, "")
+//         .replace(/k/gi, "000")
+//         .split("-")
+//         .map(s => Number(s.trim()));
+
+//       if (numbers.length === 1) {
+//         salary.min = numbers[0];
+//         salary.max = numbers[0];
+//       } else if (numbers.length === 2) {
+//         salary.min = numbers[0];
+//         salary.max = numbers[1];
+//       }
+//     }
+
+//     const job = await Job.create({
+//       company: companyId,
+//       title: req.body.title,
+//       description: req.body.description,
+//       location: company.location,
+//       type: req.body.type,
+//       experience: req.body.experience,
+//       salary: salary, 
+//       skills,
+//       status: "active",
+//     });
+
+//     res.status(201).json({ success: true, job });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ success: false, message: "Failed to create job", error: err.message });
+//   }
+// };
+
 export const createJob = async (req, res) => {
   try {
     const companyId = req.user?.id;
-    if (!companyId || req.user.userType !== "company")
+    if (!companyId || req.user.userType !== "company") {
       return res.status(401).json({ message: "Unauthorized" });
+    }
 
     const company = await Company.findById(companyId);
     if (!company) return res.status(404).json({ message: "Company not found" });
 
-    const industry = company.industry;
-    let skills = req.body.skills;
+    // 1. SKILLS LOGIC
+    // We take the skills sent by the frontend. 
+    // We don't filter them against INDUSTRY_SKILLS here because the frontend 
+    // already fetches category-specific skills. We want to allow what the user selected.
+    const standardSkills = req.body.skills || [];
+    const extraSkills = req.body.extraSkills || [];
+    const combinedSkills = [...new Set([...standardSkills, ...extraSkills])];
 
-    if (!skills || skills.length === 0) {
-      skills = INDUSTRY_SKILLS[industry] || INDUSTRY_SKILLS.Other;
-    } else {
-      skills = skills.filter((s) => (INDUSTRY_SKILLS[industry] || []).includes(s));
-    }
+    // 2. SALARY LOGIC
+    // Your frontend is already sending an object: { min, max, currency }.
+    // However, we'll add a fallback just in case the frontend sends a string.
+    let finalSalary = { min: 0, max: 0, currency: "USD" };
 
-  
-    let salaryInput = req.body.salary;
-    let salary = { min: 0, max: 0, currency: "USD" };
-
-    if (salaryInput) {
-      const numbers = salaryInput
+    if (typeof req.body.salary === 'object') {
+      finalSalary = {
+        min: Number(req.body.salary.min) || 0,
+        max: Number(req.body.salary.max) || 0,
+        currency: req.body.salary.currency || "USD"
+      };
+    } else if (typeof req.body.salary === 'string') {
+      // Fallback for string input like "$80k - $120k"
+      const numbers = req.body.salary
         .replace(/\$/g, "")
         .replace(/k/gi, "000")
         .split("-")
-        .map(s => Number(s.trim()));
+        .map(s => Number(s.replace(/[^0-9]/g, "").trim()));
 
-      if (numbers.length === 1) {
-        salary.min = numbers[0];
-        salary.max = numbers[0];
-      } else if (numbers.length === 2) {
-        salary.min = numbers[0];
-        salary.max = numbers[1];
-      }
+      finalSalary.min = numbers[0] || 0;
+      finalSalary.max = numbers[1] || numbers[0] || 0;
     }
 
+    // 3. JOB CREATION
+    // We map the incoming fields to match your Mongoose Schema exactly
     const job = await Job.create({
       company: companyId,
       title: req.body.title,
       description: req.body.description,
-      location: company.location,
+      jobTypeCategory: req.body.jobTypeCategory, // Added to match Schema
+      location: company.location || "Remote",    // Safety fallback
       type: req.body.type,
-      experience: req.body.experience,
-      salary: salary, 
-      skills,
+      experience: req.body.experience,           // Expecting "entry", "mid", etc.
+      salary: finalSalary, 
+      skills: combinedSkills,
       status: "active",
     });
 
     res.status(201).json({ success: true, job });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Failed to create job", error: err.message });
+    console.error("Create Job Error:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: err.name === "ValidationError" ? "Validation failed" : "Failed to create job", 
+      error: err.message 
+    });
   }
 };
 
