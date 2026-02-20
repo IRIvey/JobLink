@@ -30,7 +30,7 @@ const JobSearch = () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (searchQuery) params.append('search', searchQuery);
+    if (searchQuery) params.append('query', searchQuery);
       if (location) params.append('location', location);
       if (filters.type) params.append('type', filters.type);
       if (filters.experience) params.append('experience', filters.experience);
