@@ -4,6 +4,9 @@ import Application from "../models/Application.js";
 import { createNotification } from "../utils/notificationService.js";
 import mongoose from "mongoose";
 
+
+
+
 //apply jobs
 export const applyToJob = async (req, res) => {
   try {
