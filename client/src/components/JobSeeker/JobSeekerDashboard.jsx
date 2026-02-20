@@ -1,32 +1,39 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Briefcase, 
-  User, 
-  FileText, 
-  Search, 
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Briefcase,
+  User,
+  FileText,
+  Search,
   LogOut,
   Home,
   Bookmark,
   MessageSquare,
-} from 'lucide-react';
+} from "lucide-react";
 
-import JobSeekerProfile from './JobSeekerProfile'; 
-import JobSearch from './JobSearch';  
-import Applications from './Applications';  
-import SavedJobs from './SavedJobs';     
-import JobRecommendations from './JobRecommendations';
-import ChatInterface from './ChatInterface';
+import JobSeekerProfile from "./JobSeekerProfile";
+import JobSearch from "./JobSearch";
+import Applications from "./Applications";
+import SavedJobs from "./SavedJobs";
+import JobRecommendations from "./JobRecommendations";
+import ChatInterface from "./ChatInterface";
 import NotificationPanel from "../NotificationPanel";
-// Import the public profile component
-import CompanyProfilePublic from '../Company/CompanyProfilePublic'; 
+import CompanyProfilePublic from "../Company/CompanyProfilePublic";
 
 const JobSeekerDashboard = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('home');
+
+  const [activeTab, setActiveTab] = useState("home");
   const [userData, setUserData] = useState(null);
-  // State to track which company profile to view
+
+  // Company view
   const [selectedCompanyId, setSelectedCompanyId] = useState(null);
+
+  // ✅ Top Search (Navbar) states
+  const [topQuery, setTopQuery] = useState("");
+  const [dashboardSearchQuery, setDashboardSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     fetchUserData();
@@ -38,78 +45,156 @@ const JobSeekerDashboard = () => {
       if (event.state && event.state.tab) {
         setActiveTab(event.state.tab);
         setSelectedCompanyId(event.state.cId || null);
+
+        // ✅ optional: restore query if coming back to search
+        if (event.state.q) {
+          setDashboardSearchQuery(event.state.q);
+          setTopQuery(event.state.q);
+        }
       } else {
-        setActiveTab('home');
+        setActiveTab("home");
         setSelectedCompanyId(null);
       }
     };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
   const fetchUserData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      // FIXED SYNTAX ERROR: Added backticks for the template literal below
-      const response = await fetch('http://localhost:5001/api/auth/me', {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:5001/api/auth/me", {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
       const data = await response.json();
       if (response.ok) {
         setUserData(data.user);
       }
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error("Error fetching user data:", error);
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userType');
-    window.location.href = '/';
+    localStorage.removeItem("token");
+    localStorage.removeItem("userType");
+    window.location.href = "/";
   };
 
   const handleResumeBuilder = () => {
-    navigate('/resume-builder');
+    navigate("/resume-builder");
+  };
+
+  // ✅ Debounced suggestions call (Atlas Search suggest endpoint)
+  useEffect(() => {
+    const t = setTimeout(async () => {
+      const q = topQuery.trim();
+      if (!q) {
+        setSuggestions([]);
+        setShowSuggestions(false);
+        return;
+      }
+
+      try {
+        const res = await fetch(
+          `http://localhost:5001/api/jobs/suggest?q=${encodeURIComponent(q)}`
+        );
+        const data = await res.json();
+
+        if (data.success) {
+          setSuggestions(data.suggestions || []);
+          setShowSuggestions(true);
+        } else {
+          setSuggestions([]);
+          setShowSuggestions(false);
+        }
+      } catch (err) {
+        console.error("Suggestion fetch error:", err);
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(t);
+  }, [topQuery]);
+
+  // ✅ Run search from top bar: switch tab + pass query to JobSearch
+  const runTopSearch = (q) => {
+    const cleaned = (q || "").trim();
+    if (!cleaned) return;
+
+    setTopQuery(cleaned);
+    setDashboardSearchQuery(cleaned);
+
+    setActiveTab("search");
+    setShowSuggestions(false);
+
+    // Keep history consistent (like your other tabs)
+    window.history.pushState(
+      { tab: "search", q: cleaned },
+      "",
+      window.location.pathname
+    );
   };
 
   const navigation = [
-    { id: 'home', label: 'Home', icon: Home },
-    { id: 'search', label: 'Search Jobs', icon: Search },
-    { id: 'applications', label: 'My Applications', icon: Briefcase },
-    { id: 'saved', label: 'Saved Jobs', icon: Bookmark },
-    { id: 'resume', label: 'My Resume', icon: FileText, isExternal: true },
-    { id: 'profile', label: 'Profile', icon: User },
+    { id: "home", label: "Home", icon: Home },
+    { id: "search", label: "Search Jobs", icon: Search },
+    { id: "applications", label: "My Applications", icon: Briefcase },
+    { id: "saved", label: "Saved Jobs", icon: Bookmark },
+    { id: "resume", label: "My Resume", icon: FileText, isExternal: true },
+    { id: "profile", label: "Profile", icon: User },
   ];
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'home': 
+      case "home":
         return (
-          <JobRecommendations 
-            userData={userData} 
+          <JobRecommendations
+            userData={userData}
             onViewCompany={(id) => {
               setSelectedCompanyId(id);
-              setActiveTab('company-view');
-              window.history.pushState({ tab: 'company-view', cId: id }, '', window.location.pathname);
-            }} 
+              setActiveTab("company-view");
+              window.history.pushState(
+                { tab: "company-view", cId: id },
+                "",
+                window.location.pathname
+              );
+            }}
           />
         );
-      case 'search': return <JobSearch userData={userData} />;
-      case 'applications': return <Applications userData={userData} />;
-      case 'saved': return <SavedJobs userData={userData} />;
-      case 'profile': return <JobSeekerProfile userData={userData} onUpdate={fetchUserData} />;
-      case 'messages': return <ChatInterface userData={userData} />;
-      case 'company-view': 
+
+      case "search":
+        // ✅ pass query from top bar to JobSearch
         return (
-          <CompanyProfilePublic 
-            companyId={selectedCompanyId} 
-            onBack={() => setActiveTab('home')} 
+          <JobSearch userData={userData} initialQuery={dashboardSearchQuery} />
+        );
+
+      case "applications":
+        return <Applications userData={userData} />;
+
+      case "saved":
+        return <SavedJobs userData={userData} />;
+
+      case "profile":
+        return <JobSeekerProfile userData={userData} onUpdate={fetchUserData} />;
+
+      case "messages":
+        return <ChatInterface userData={userData} />;
+
+      case "company-view":
+        return (
+          <CompanyProfilePublic
+            companyId={selectedCompanyId}
+            onBack={() => setActiveTab("home")}
           />
         );
-      default: return <JobRecommendations userData={userData} />;
+
+      default:
+        return <JobRecommendations userData={userData} />;
     }
   };
 
@@ -125,15 +210,49 @@ const JobSeekerDashboard = () => {
               <span className="text-2xl font-bold text-gray-900">JobLink</span>
             </div>
 
-            {/* Search Bar */}
+            {/* ✅ Search Bar */}
             <div className="flex-1 max-w-2xl mx-8">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <Search
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={20}
+                />
+
                 <input
                   type="text"
+                  value={topQuery}
+                  onChange={(e) => setTopQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      runTopSearch(topQuery);
+                    }
+                  }}
+                  onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                   placeholder="Search jobs, companies, skills..."
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
+
+                {/* ✅ Suggestions Dropdown */}
+                {showSuggestions && suggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg mt-2 z-50 overflow-hidden">
+                    {suggestions.map((s) => (
+                      <button
+                        key={s._id}
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()} // prevent blur before click
+                        onClick={() => runTopSearch(s.title)}
+                        className="w-full text-left px-4 py-3 hover:bg-gray-50 flex justify-between"
+                      >
+                        <span className="text-gray-900">{s.title}</span>
+                        <span className="text-gray-500 text-sm">
+                          {s.location || ""}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -141,12 +260,12 @@ const JobSeekerDashboard = () => {
             <div className="flex items-center gap-4">
               <NotificationPanel />
 
-              <button 
-                onClick={() => setActiveTab('messages')}
+              <button
+                onClick={() => setActiveTab("messages")}
                 className={`p-2 rounded-lg transition-colors ${
-                  activeTab === 'messages' 
-                    ? 'bg-indigo-100 text-indigo-600' 
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  activeTab === "messages"
+                    ? "bg-indigo-100 text-indigo-600"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                 }`}
               >
                 <MessageSquare size={24} />
@@ -154,7 +273,7 @@ const JobSeekerDashboard = () => {
 
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
-                  {userData?.email?.[0]?.toUpperCase() || 'U'}
+                  {userData?.email?.[0]?.toUpperCase() || "U"}
                 </div>
                 <button
                   onClick={handleLogout}
@@ -178,8 +297,8 @@ const JobSeekerDashboard = () => {
               <nav className="p-4 space-y-1">
                 {navigation.map((item) => {
                   const Icon = item.icon;
-                  
-                  if (item.id === 'resume') {
+
+                  if (item.id === "resume") {
                     return (
                       <button
                         key={item.id}
@@ -191,15 +310,33 @@ const JobSeekerDashboard = () => {
                       </button>
                     );
                   }
-                  
+
                   return (
                     <button
                       key={item.id}
-                      onClick={() => setActiveTab(item.id)}
+                      onClick={() => {
+                        setActiveTab(item.id);
+
+                        // ✅ if user clicks Search Jobs tab, use current topQuery
+                        if (item.id === "search") {
+                          setDashboardSearchQuery(topQuery.trim());
+                          window.history.pushState(
+                            { tab: "search", q: topQuery.trim() },
+                            "",
+                            window.location.pathname
+                          );
+                        } else {
+                          window.history.pushState(
+                            { tab: item.id },
+                            "",
+                            window.location.pathname
+                          );
+                        }
+                      }}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                         activeTab === item.id
-                          ? 'bg-indigo-50 text-indigo-600'
-                          : 'text-gray-700 hover:bg-gray-50'
+                          ? "bg-indigo-50 text-indigo-600"
+                          : "text-gray-700 hover:bg-gray-50"
                       }`}
                     >
                       <Icon size={20} />
@@ -212,18 +349,21 @@ const JobSeekerDashboard = () => {
           </aside>
 
           {/* Main Content Area */}
-          <main className="flex-1">
-            {renderContent()}
-          </main>
+          <main className="flex-1">{renderContent()}</main>
 
           {/* Right Sidebar */}
           <aside className="w-80 flex-shrink-0">
             <div className="space-y-4 sticky top-20">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">Profile Strength</h3>
+                <h3 className="font-semibold text-gray-900 mb-4">
+                  Profile Strength
+                </h3>
                 <div className="mb-3">
                   <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-indigo-600 h-2 rounded-full" style={{ width: '60%' }}></div>
+                    <div
+                      className="bg-indigo-600 h-2 rounded-full"
+                      style={{ width: "60%" }}
+                    ></div>
                   </div>
                   <p className="text-sm text-gray-600 mt-2">60% Complete</p>
                 </div>
@@ -241,7 +381,7 @@ const JobSeekerDashboard = () => {
                     Upload resume
                   </li>
                 </ul>
-                
+
                 <button
                   onClick={handleResumeBuilder}
                   className="w-full mt-4 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2"
