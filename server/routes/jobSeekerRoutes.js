@@ -13,7 +13,8 @@ import {
   getApplications,
   getApplicationDetails,
   withdrawApplication,
-  getDashboardStats
+  getDashboardStats,
+  suggestJobs
 } from "../controllers/Jobseekercontroller.js";
 
 const router = express.Router();
@@ -29,7 +30,7 @@ router.get("/:jobSeekerId/profile", protect, getJobSeekerProfile);
 // Job search and recommendations
 router.get("/jobs/search", searchJobs);
 router.get("/recommendations", getRecommendations);
-
+router.get("/suggest", suggestJobs);
 // Saved jobs
 router.post("/jobs/:jobId/save", saveJob);
 router.delete("/jobs/:jobId/save", unsaveJob);
