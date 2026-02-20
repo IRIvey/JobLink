@@ -12,7 +12,7 @@ import applicationRoutes from "./routes/applicationRoutes.js";
 import jobSeekerRoutes from "./routes/jobSeekerRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import analyticsRoutes from "./routes/Analyticsroutes.js";
-
+import analyzeRoutes from "./routes/analyzeRoutes.js";
 // ✅ NEW ROUTES - Import notification, interview, and email routes
 import interviewRoutes from "./routes/interviewRoutes.js";
 import emailRoutes from "./routes/emailRoutes.js";
@@ -56,7 +56,7 @@ app.use("/api/jobseekers", jobSeekerRoutes);
 app.use("/api/interviews", interviewRoutes);
 app.use("/api/emails", emailRoutes);
 app.use("/api/notifications", notificationRoutes);
-
+app.use("/api/ai", analyzeRoutes);
 // Health check route
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "Server is running" });
