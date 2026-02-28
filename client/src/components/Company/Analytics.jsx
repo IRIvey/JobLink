@@ -65,12 +65,43 @@ const Analytics = () => {
       );
 
       if (response.data.success) {
+        console.log("✅ Analytics data loaded:", response.data.data);
+        console.log("📊 Application trends:", response.data.data.applicationTrends);
         setAnalytics(response.data.data);
       }
     } catch (error) {
-      console.error("Failed to fetch analytics:", error);
+      console.error("❌ Failed to fetch analytics:", error);
+      console.error("Error details:", error.response?.data);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Format date for better readability
+  const formatChartDate = (dateStr, index, total) => {
+    const date = new Date(dateStr);
+    
+    if (timeRange === "7d") {
+      // Show day of week for 7 days
+      return date.toLocaleDateString("en-US", { weekday: "short" });
+    } else if (timeRange === "30d") {
+      // Show every 5th date for 30 days
+      if (index % 5 === 0 || index === total - 1) {
+        return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      }
+      return "";
+    } else if (timeRange === "90d") {
+      // Show every 10th date for 90 days
+      if (index % 10 === 0 || index === total - 1) {
+        return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      }
+      return "";
+    } else {
+      // For 1 year, show every 30th
+      if (index % 30 === 0 || index === total - 1) {
+        return date.toLocaleDateString("en-US", { month: "short" });
+      }
+      return "";
     }
   };
 
@@ -83,15 +114,15 @@ const Analytics = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-8">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold text-gray-900">
           Performance Analytics
         </h1>
 
         {/* Time Range Selector */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {[
             { label: "7 Days", value: "7d" },
             { label: "30 Days", value: "30d" },
@@ -101,7 +132,7 @@ const Analytics = () => {
             <button
               key={range.value}
               onClick={() => setTimeRange(range.value)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                 timeRange === range.value
                   ? "bg-indigo-600 text-white"
                   : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
@@ -114,40 +145,40 @@ const Analytics = () => {
       </div>
 
       {/* Key Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <MetricCard
           title="Total Applications"
           value={analytics.overview.totalApplications}
-          icon={<Users className="w-6 h-6" />}
+          icon={<Users className="w-5 h-5 sm:w-6 sm:h-6" />}
           color="bg-blue-500"
         />
         <MetricCard
           title="Active Jobs"
           value={analytics.overview.activeJobs}
-          icon={<Briefcase className="w-6 h-6" />}
+          icon={<Briefcase className="w-5 h-5 sm:w-6 sm:h-6" />}
           color="bg-indigo-500"
         />
         <MetricCard
           title="Total Hires"
           value={analytics.overview.totalHires}
-          icon={<CheckCircle className="w-6 h-6" />}
+          icon={<CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" />}
           color="bg-green-500"
         />
         <MetricCard
           title="Pending Review"
           value={analytics.overview.pendingReview}
-          icon={<Clock className="w-6 h-6" />}
+          icon={<Clock className="w-5 h-5 sm:w-6 sm:h-6" />}
           color="bg-orange-500"
         />
       </div>
 
       {/* Conversion Rates */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+      <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
+        <h3 className="text-base sm:text-lg font-semibold mb-4 flex items-center gap-2">
           <Target className="w-5 h-5 text-indigo-600" />
           Conversion Metrics
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
           <ConversionMetric
             label="Application → Interview"
             value={`${analytics.conversionRates.applicationToInterview}%`}
@@ -167,54 +198,91 @@ const Analytics = () => {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Application Trends */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        {/* Application Trends - IMPROVED */}
+        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-base sm:text-lg font-semibold mb-4 flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-indigo-600" />
             Application Trends
+            {analytics.applicationTrends.length > 0 && (
+              <span className="text-sm text-gray-500 ml-auto">
+                Total: {analytics.applicationTrends.reduce((sum, day) => sum + day.count, 0)} applications
+              </span>
+            )}
           </h3>
 
-          <div className="h-64 flex items-end gap-1">
-            {analytics.applicationTrends.map((day, i) => {
-              const maxCount = Math.max(
-                ...analytics.applicationTrends.map((d) => d.count),
-                1
-              );
-              const height = (day.count / maxCount) * 100;
+          {analytics.applicationTrends && analytics.applicationTrends.length > 0 ? (
+            <div className="space-y-3">
+              {/* Chart */}
+              <div className="h-52 flex items-end gap-0.5 px-2 border-l-2 border-b-2 border-gray-200 pb-8">
+                {analytics.applicationTrends.map((day, i) => {
+                  const maxCount = Math.max(
+                    ...analytics.applicationTrends.map((d) => d.count),
+                    1
+                  );
+                  const height = day.count > 0 ? Math.max((day.count / maxCount) * 100, 3) : 0;
 
-              return (
-                <div
-                  key={i}
-                  className="flex-1 flex flex-col items-center group relative"
-                >
-                  <div
-                    style={{ height: `${height}%` }}
-                    className="w-full bg-indigo-500 rounded-t-sm transition-all hover:bg-indigo-600 cursor-pointer"
-                  />
+                  return (
+                    <div
+                      key={i}
+                      className="flex-1 flex flex-col items-center group relative"
+                      style={{ minWidth: "8px" }}
+                    >
+                      {/* Tooltip */}
+                      <div className="absolute bottom-full mb-2 hidden group-hover:flex bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10 flex-col items-center">
+                        <span className="font-semibold">{day.count} apps</span>
+                        <span className="text-[10px] text-gray-300">{day.label}</span>
+                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
+                      </div>
 
-                  {/* Tooltip */}
-                  <div className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
-                    {day.label}: {day.count} applications
-                  </div>
+                      {/* Bar */}
+                      <div
+                        style={{ height: `${height}%` }}
+                        className={`w-full rounded-t transition-all hover:opacity-80 cursor-pointer ${
+                          day.count === 0
+                            ? "bg-gray-200"
+                            : day.count < maxCount / 3
+                            ? "bg-indigo-300"
+                            : day.count < (maxCount * 2) / 3
+                            ? "bg-indigo-500"
+                            : "bg-indigo-600"
+                        }`}
+                        title={`${day.label}: ${day.count} applications`}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
 
-                  <span className="text-xs text-gray-500 mt-2 rotate-45 origin-left truncate w-16">
-                    {day.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+              {/* X-axis labels */}
+              <div className="flex justify-between px-2 text-xs text-gray-500">
+                {analytics.applicationTrends.map((day, i) => {
+                  const label = formatChartDate(day.date, i, analytics.applicationTrends.length);
+                  return label ? (
+                    <span key={i} className="text-center">
+                      {label}
+                    </span>
+                  ) : (
+                    <span key={i}></span>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-gray-400 text-sm">
+              No application data for this period
+            </div>
+          )}
         </div>
 
         {/* Application Status Breakdown */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-base sm:text-lg font-semibold mb-4 flex items-center gap-2">
             <Activity className="w-5 h-5 text-indigo-600" />
             Application Status
           </h3>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {[
               {
                 label: "Pending",
@@ -247,7 +315,7 @@ const Analytics = () => {
 
               return (
                 <div key={status.label}>
-                  <div className="flex justify-between text-sm mb-1">
+                  <div className="flex justify-between text-xs sm:text-sm mb-1">
                     <span className="font-medium">{status.label}</span>
                     <span className="text-gray-600">
                       {status.count} ({percentage}%)
@@ -268,151 +336,149 @@ const Analytics = () => {
       </div>
 
       {/* Top Performing Jobs */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-indigo-600" />
-          Top Performing Jobs
-        </h3>
+      {analytics.topPerformingJobs && analytics.topPerformingJobs.length > 0 && (
+        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-base sm:text-lg font-semibold mb-4 flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-indigo-600" />
+            Top Performing Jobs
+          </h3>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead>
-              <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <th className="pb-3">Job Title</th>
-                <th className="pb-3">Location</th>
-                <th className="pb-3 text-center">Applications</th>
-                <th className="pb-3 text-center">Interviews</th>
-                <th className="pb-3 text-center">Hired</th>
-                <th className="pb-3 text-center">Conversion</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {analytics.topPerformingJobs.length > 0 ? (
-                analytics.topPerformingJobs.map((job) => (
-                  <tr key={job.id} className="hover:bg-gray-50">
-                    <td className="py-3">
-                      <div className="font-medium text-gray-900">
-                        {job.title}
-                      </div>
-                      <div className="text-sm text-gray-500">{job.type}</div>
-                    </td>
-                    <td className="py-3 text-sm text-gray-600">
-                      {job.location}
-                    </td>
-                    <td className="py-3 text-center">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {job.applicationCount}
-                      </span>
-                    </td>
-                    <td className="py-3 text-center">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                        {job.interviewCount}
-                      </span>
-                    </td>
-                    <td className="py-3 text-center">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        {job.hiredCount}
-                      </span>
-                    </td>
-                    <td className="py-3 text-center font-medium text-gray-900">
-                      {job.conversionRate}%
-                    </td>
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <div className="inline-block min-w-full align-middle">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead>
+                  <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="pb-3 px-4 sm:px-0">Job Title</th>
+                    <th className="pb-3 px-4 sm:px-0 hidden sm:table-cell">Location</th>
+                    <th className="pb-3 px-4 sm:px-0 text-center">Apps</th>
+                    <th className="pb-3 px-4 sm:px-0 text-center hidden md:table-cell">Interviews</th>
+                    <th className="pb-3 px-4 sm:px-0 text-center">Hired</th>
+                    <th className="pb-3 px-4 sm:px-0 text-center">Conv.</th>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="6" className="py-8 text-center text-gray-500">
-                    No job data available yet
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {analytics.topPerformingJobs.map((job) => (
+                    <tr key={job.id} className="hover:bg-gray-50">
+                      <td className="py-3 px-4 sm:px-0">
+                        <div className="font-medium text-gray-900 text-sm">
+                          {job.title}
+                        </div>
+                        <div className="text-xs text-gray-500 sm:hidden">{job.location}</div>
+                      </td>
+                      <td className="py-3 px-4 sm:px-0 text-xs sm:text-sm text-gray-600 hidden sm:table-cell">
+                        {job.location}
+                      </td>
+                      <td className="py-3 px-4 sm:px-0 text-center">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {job.applicationCount}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 sm:px-0 text-center hidden md:table-cell">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                          {job.interviewCount}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 sm:px-0 text-center">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          {job.hiredCount}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 sm:px-0 text-center font-medium text-gray-900 text-xs sm:text-sm">
+                        {job.conversionRate}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Candidate Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Skills */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold mb-4">Top Candidate Skills</h3>
-          <div className="space-y-3">
-            {analytics.candidateMetrics.topSkills
-              .slice(0, 8)
-              .map((skill, index) => {
-                const maxCount = analytics.candidateMetrics.topSkills[0]?.count || 1;
-                const percentage = ((skill.count / maxCount) * 100).toFixed(0);
+      {analytics.candidateMetrics && analytics.candidateMetrics.topSkills && analytics.candidateMetrics.topSkills.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          {/* Top Skills */}
+          <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
+            <h3 className="text-base sm:text-lg font-semibold mb-4">Top Candidate Skills</h3>
+            <div className="space-y-2 sm:space-y-3">
+              {analytics.candidateMetrics.topSkills
+                .slice(0, 8)
+                .map((skill, index) => {
+                  const maxCount = analytics.candidateMetrics.topSkills[0]?.count || 1;
+                  const percentage = ((skill.count / maxCount) * 100).toFixed(0);
 
-                return (
-                  <div key={index}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="font-medium">{skill.skill}</span>
-                      <span className="text-gray-600">{skill.count}</span>
+                  return (
+                    <div key={index}>
+                      <div className="flex justify-between text-xs sm:text-sm mb-1">
+                        <span className="font-medium truncate pr-2">{skill.skill}</span>
+                        <span className="text-gray-600 flex-shrink-0">{skill.count}</span>
+                      </div>
+                      <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                        <div
+                          className="bg-indigo-500 h-2 transition-all duration-500"
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                      <div
-                        className="bg-indigo-500 h-2"
-                        style={{ width: `${percentage}%` }}
-                      />
+                  );
+                })}
+            </div>
+          </div>
+
+          {/* Experience Distribution */}
+          <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
+            <h3 className="text-base sm:text-lg font-semibold mb-4">
+              Experience Distribution
+            </h3>
+            <div className="space-y-2 sm:space-y-3">
+              {Object.entries(analytics.candidateMetrics.experienceDistribution).map(
+                ([level, count]) => {
+                  const total = Object.values(
+                    analytics.candidateMetrics.experienceDistribution
+                  ).reduce((a, b) => a + b, 0) || 1;
+                  const percentage = ((count / total) * 100).toFixed(1);
+
+                  return (
+                    <div key={level}>
+                      <div className="flex justify-between text-xs sm:text-sm mb-1">
+                        <span className="font-medium">{level}</span>
+                        <span className="text-gray-600">
+                          {count} ({percentage}%)
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                        <div
+                          className="bg-green-500 h-2 transition-all duration-500"
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                }
+              )}
+            </div>
           </div>
         </div>
-
-        {/* Experience Distribution */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold mb-4">
-            Experience Distribution
-          </h3>
-          <div className="space-y-3">
-            {Object.entries(analytics.candidateMetrics.experienceDistribution).map(
-              ([level, count]) => {
-                const total = Object.values(
-                  analytics.candidateMetrics.experienceDistribution
-                ).reduce((a, b) => a + b, 0) || 1;
-                const percentage = ((count / total) * 100).toFixed(1);
-
-                return (
-                  <div key={level}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="font-medium">{level}</span>
-                      <span className="text-gray-600">
-                        {count} ({percentage}%)
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                      <div
-                        className="bg-green-500 h-2"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              }
-            )}
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Response Metrics */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <h3 className="text-lg font-semibold mb-4">Response Performance</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="text-center p-6 bg-indigo-50 rounded-lg">
-            <div className="text-3xl font-bold text-indigo-600">
+      <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
+        <h3 className="text-base sm:text-lg font-semibold mb-4">Response Performance</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          <div className="text-center p-4 sm:p-6 bg-indigo-50 rounded-lg">
+            <div className="text-2xl sm:text-3xl font-bold text-indigo-600">
               {analytics.responseMetrics.averageResponseTimeDays}
             </div>
-            <div className="text-sm text-gray-600 mt-1">
+            <div className="text-xs sm:text-sm text-gray-600 mt-1">
               Average Response Time (Days)
             </div>
           </div>
-          <div className="text-center p-6 bg-green-50 rounded-lg">
-            <div className="text-3xl font-bold text-green-600">
+          <div className="text-center p-4 sm:p-6 bg-green-50 rounded-lg">
+            <div className="text-2xl sm:text-3xl font-bold text-green-600">
               {analytics.responseMetrics.responseRate}%
             </div>
-            <div className="text-sm text-gray-600 mt-1">Response Rate</div>
+            <div className="text-xs sm:text-sm text-gray-600 mt-1">Response Rate</div>
           </div>
         </div>
       </div>
@@ -423,13 +489,13 @@ const Analytics = () => {
 // Metric Card Component
 const MetricCard = ({ title, value, icon, color }) => {
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+    <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-gray-600 mb-1">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs sm:text-sm text-gray-600 mb-1 truncate">{title}</p>
+          <p className="text-xl sm:text-2xl font-bold text-gray-900">{value}</p>
         </div>
-        <div className={`${color} p-3 rounded-lg text-white`}>{icon}</div>
+        <div className={`${color} p-2 sm:p-3 rounded-lg text-white flex-shrink-0 ml-2`}>{icon}</div>
       </div>
     </div>
   );
@@ -440,8 +506,8 @@ const ConversionMetric = ({ label, value, progress }) => {
   return (
     <div>
       <div className="flex justify-between items-center mb-2">
-        <span className="text-sm font-medium text-gray-700">{label}</span>
-        <span className="text-lg font-bold text-gray-900">{value}</span>
+        <span className="text-xs sm:text-sm font-medium text-gray-700 truncate pr-2">{label}</span>
+        <span className="text-base sm:text-lg font-bold text-gray-900 flex-shrink-0">{value}</span>
       </div>
       <div className="w-full bg-gray-200 rounded-full h-2">
         <div
