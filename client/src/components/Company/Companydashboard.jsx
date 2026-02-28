@@ -8,17 +8,12 @@ import {
   LogOut,
   Plus,
   CheckCircle,
-  Search,
   TrendingUp,
 } from "lucide-react";
-import { useMemo } from "react";
 
-// ✅ Import NotificationPanel
 import NotificationPanel from "../NotificationPanel";
+import CompanySearchOverlay from "./Companysearchoverlay";
 
-
-
-// ✅ Import your pages
 import DashboardHome from "./DashboardHome";
 import PostJob from "./PostJob";
 import ManageJobs from "./ManageJobs";
@@ -33,8 +28,6 @@ const CompanyDashboard = () => {
   const [companyData, setCompanyData] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
-
-  // for top search bar (optional - you can pass to pages if needed later)
   const [globalSearch, setGlobalSearch] = useState("");
 
   useEffect(() => {
@@ -62,12 +55,8 @@ const CompanyDashboard = () => {
       const res = await fetch("http://localhost:5001/api/companies/jobs", {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (!res.ok) return;
-
       const data = await res.json();
-
-      // ✅ Update jobs state immediately
       setJobs(data.jobs ?? []);
     } catch (err) {
       console.error("Failed to fetch jobs:", err);
@@ -93,7 +82,6 @@ const CompanyDashboard = () => {
     window.location.href = "/";
   };
 
-  // ✅ LEFT SIDEBAR NAV
   const navigation = [
     { id: "home", label: "Dashboard", icon: Home },
     { id: "post-job", label: "Post Job", icon: Plus },
@@ -103,37 +91,31 @@ const CompanyDashboard = () => {
     { id: "profile", label: "Profile", icon: User },
   ];
 
-  // ✅ Handlers you may need across pages
   const handleStatusChange = (appId, newStatus) => {
     setApplications((prev) =>
       prev.map((app) => (app.id === appId ? { ...app, status: newStatus } : app))
     );
   };
 
-  // ✅ MAIN CONTENT SWITCH (calls modular pages)
   const renderContent = () => {
     switch (activeTab) {
       case "post-job":
         return (
           <PostJob
-            // optional: after posting job you can refresh
             onJobPosted={() => {
               fetchJobs();
               setActiveTab("jobs");
             }}
           />
         );
-
       case "jobs":
         return (
           <ManageJobs
             jobs={jobs}
             setJobs={setJobs}
-            // optional: you can open post job tab from ManageJobs button
             onClickPostNewJob={() => setActiveTab("post-job")}
           />
         );
-
       case "applications":
         return (
           <Applicants
@@ -141,10 +123,8 @@ const CompanyDashboard = () => {
             handleStatusChange={handleStatusChange}
           />
         );
-
       case "analytics":
         return <Analytics jobs={jobs} applications={applications} />;
-
       case "profile":
         return (
           <CompanyProfilePage
@@ -152,7 +132,6 @@ const CompanyDashboard = () => {
             setCompanyData={setCompanyData}
           />
         );
-
       default:
         return <DashboardHome jobs={jobs} applications={applications} />;
     }
@@ -169,27 +148,16 @@ const CompanyDashboard = () => {
               <span className="text-2xl font-bold text-gray-900">JobLink</span>
             </div>
 
-            {/* ✅ Keep Search bar as is */}
-            <div className="flex-1 max-w-2xl mx-8">
-              <div className="relative">
-                <Search
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  size={20}
-                />
-                <input
-                  type="text"
-                  placeholder="Search jobs, companies, skills..."
-                  value={globalSearch}
-                  onChange={(e) => setGlobalSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                />
-              </div>
-            </div>
+            <CompanySearchOverlay
+              query={globalSearch}
+              onChange={setGlobalSearch}
+              jobs={jobs}
+              applications={applications}
+              onNavigate={setActiveTab}
+            />
 
             <div className="flex items-center gap-4">
-              {/* ✅ REPLACED: Old notification button with NotificationPanel */}
               <NotificationPanel />
-
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
                   {companyData?.email?.[0]?.toUpperCase() || "C"}
@@ -209,7 +177,7 @@ const CompanyDashboard = () => {
 
       {/* Layout */}
       <div className="mx-auto px-6 pt-24 flex gap-5" style={{ maxWidth: '1900px' }}>
-        {/* Left Sidebar - Slightly larger */}
+        {/* Left Sidebar */}
         <aside className="w-56 flex-shrink-0">
           <div className="bg-white rounded-xl shadow-sm p-3 space-y-1 sticky top-24">
             {navigation.map((item) => {
@@ -232,9 +200,8 @@ const CompanyDashboard = () => {
           </div>
         </aside>
 
-        {/* Main Content - Maximum space */}
+        {/* Main Content */}
         <main className="flex-1 space-y-6 min-w-0">
-          {/* ✅ Quick Stats only in home */}
           {activeTab === "home" && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
               <StatBox
@@ -260,38 +227,29 @@ const CompanyDashboard = () => {
               />
             </div>
           )}
-
           {renderContent()}
         </main>
 
-        {/* Right Sidebar - Larger */}
+        {/* Right Sidebar */}
         <aside className="w-64 flex-shrink-0">
           <div className="space-y-4 sticky top-24">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-              <h3 className="font-bold text-gray-900 mb-4 text-lg">
-                Profile Strength
-              </h3>
+              <h3 className="font-bold text-gray-900 mb-4 text-lg">Profile Strength</h3>
               <div className="mb-4">
                 <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div
-                    className="bg-indigo-600 h-2.5 rounded-full"
-                    style={{ width: "60%" }}
-                  ></div>
+                  <div className="bg-indigo-600 h-2.5 rounded-full" style={{ width: "60%" }}></div>
                 </div>
                 <p className="text-base text-gray-600 mt-2 font-medium">60% Complete</p>
               </div>
               <ul className="space-y-2.5 text-base">
                 <li className="flex items-center gap-2 text-gray-600">
-                  <div className="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
-                  Email verified
+                  <div className="w-2.5 h-2.5 bg-green-500 rounded-full"></div>Email verified
                 </li>
                 <li className="flex items-center gap-2 text-gray-600">
-                  <div className="w-2.5 h-2.5 bg-gray-300 rounded-full"></div>
-                  Add company info
+                  <div className="w-2.5 h-2.5 bg-gray-300 rounded-full"></div>Add company info
                 </li>
                 <li className="flex items-center gap-2 text-gray-600">
-                  <div className="w-2.5 h-2.5 bg-gray-300 rounded-full"></div>
-                  Post first job
+                  <div className="w-2.5 h-2.5 bg-gray-300 rounded-full"></div>Post first job
                 </li>
               </ul>
             </div>
@@ -302,7 +260,6 @@ const CompanyDashboard = () => {
   );
 };
 
-// ✅ Stat Box with larger text
 const StatBox = ({ icon: Icon, label, value, color, textColor }) => (
   <div className="bg-white rounded-xl shadow-sm p-6 flex items-center gap-4">
     <div className={`${color} p-4 rounded-lg`}>
