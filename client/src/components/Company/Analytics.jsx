@@ -86,6 +86,37 @@ const Analytics = () => {
   const maxCount = Math.max(...analytics.applicationTrends.map(d => d.count), 1);
   const totalApps = analytics.applicationTrends.reduce((sum, day) => sum + day.count, 0);
 
+  // Group trends by week for cleaner display
+  const groupedTrends = analytics.applicationTrends.reduce((acc, day, idx) => {
+    if (timeRange === "7d") {
+      // For 7 days, show each day
+      acc.push({
+        label: new Date(day.date).toLocaleDateString("en-US", { weekday: "short" }),
+        count: day.count,
+      });
+    } else if (timeRange === "30d") {
+      // For 30 days, group by week
+      const weekNum = Math.floor(idx / 7);
+      if (!acc[weekNum]) {
+        acc[weekNum] = {
+          label: `Week ${weekNum + 1}`,
+          count: 0,
+        };
+      }
+      acc[weekNum].count += day.count;
+    } else {
+      // For longer periods, group by month
+      const monthLabel = new Date(day.date).toLocaleDateString("en-US", { month: "short" });
+      const existing = acc.find(g => g.label === monthLabel);
+      if (existing) {
+        existing.count += day.count;
+      } else {
+        acc.push({ label: monthLabel, count: day.count });
+      }
+    }
+    return acc;
+  }, []);
+
   return (
     <div className="space-y-6 pb-8">
       {/* Header */}
@@ -171,7 +202,7 @@ const Analytics = () => {
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        {/* Application Trends - SIMPLE CSS VERSION */}
+        {/* Application Trends - HORIZONTAL BARS LIKE STATUS */}
         <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-base sm:text-lg font-semibold flex items-center gap-2">
@@ -183,83 +214,35 @@ const Analytics = () => {
             </span>
           </div>
 
-          {analytics.applicationTrends.length > 0 ? (
-            <div className="space-y-2">
-              {/* Y-axis and Chart */}
-              <div className="flex gap-3">
-                {/* Y-axis labels */}
-                <div className="flex flex-col justify-between text-xs text-gray-500 py-2" style={{ width: '30px' }}>
-                  <span>{maxCount}</span>
-                  <span className="text-center">{Math.ceil(maxCount / 2)}</span>
-                  <span>0</span>
-                </div>
+          <div className="space-y-4">
+            {groupedTrends.length > 0 ? (
+              groupedTrends.map((item, idx) => {
+                const percentage = maxCount > 0 ? ((item.count / maxCount) * 100).toFixed(1) : 0;
+                
+                return (
+                  <div key={idx}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="font-medium">{item.label}</span>
+                      <span className="text-gray-600">
+                        {item.count} applications
+                      </span>
+                    </div>
 
-                {/* Chart area */}
-                <div className="flex-1">
-                  <div className="h-64 flex items-end gap-px border-l-2 border-b-2 border-gray-300 pl-2 pb-1">
-                    {analytics.applicationTrends.map((day, idx) => {
-                      const heightPercent = day.count > 0 
-                        ? Math.max((day.count / maxCount) * 100, 8)
-                        : 2;
-
-                      return (
-                        <div
-                          key={idx}
-                          className="flex-1 flex flex-col items-center group relative"
-                          style={{ minWidth: '8px' }}
-                        >
-                          {/* Tooltip */}
-                          <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs rounded py-2 px-3 whitespace-nowrap z-10 pointer-events-none">
-                            <div className="font-bold text-base text-indigo-300">{day.count}</div>
-                            <div className="text-[10px] text-gray-300">{day.label}</div>
-                            <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
-                          </div>
-
-                          {/* Bar */}
-                          <div
-                            className={`w-full rounded-t transition-all duration-300 cursor-pointer ${
-                              day.count === 0 
-                                ? 'bg-gray-200' 
-                                : day.count <= maxCount / 3
-                                ? 'bg-indigo-400 hover:bg-indigo-500'
-                                : day.count <= (maxCount * 2) / 3
-                                ? 'bg-indigo-500 hover:bg-indigo-600'
-                                : 'bg-indigo-600 hover:bg-indigo-700'
-                            }`}
-                            style={{ height: `${heightPercent}%` }}
-                            title={`${day.label}: ${day.count} applications`}
-                          />
-                        </div>
-                      );
-                    })}
+                    <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden">
+                      <div
+                        className="bg-indigo-500 h-3 transition-all duration-500 rounded-full"
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
                   </div>
-
-                  {/* X-axis labels */}
-                  <div className="flex justify-between mt-2 pl-2 text-xs text-gray-500">
-                    {analytics.applicationTrends.map((day, idx) => {
-                      // Show every 5th label for 30d view
-                      const showLabel = timeRange === "7d" 
-                        ? true 
-                        : idx % 5 === 0 || idx === analytics.applicationTrends.length - 1;
-                      
-                      return (
-                        <span key={idx} className={`flex-1 text-center ${!showLabel && 'invisible'}`}>
-                          {new Date(day.date).toLocaleDateString("en-US", { 
-                            month: "short", 
-                            day: "numeric" 
-                          })}
-                        </span>
-                      );
-                    })}
-                  </div>
-                </div>
+                );
+              })
+            ) : (
+              <div className="text-center text-gray-400 py-8">
+                <p className="text-sm">No application data available</p>
               </div>
-            </div>
-          ) : (
-            <div className="h-64 flex items-center justify-center text-gray-400">
-              <p className="text-sm">No data available</p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Application Status Breakdown */}
@@ -288,6 +271,7 @@ const Analytics = () => {
                       {status.count} ({percentage}%)
                     </span>
                   </div>
+
                   <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
                     <div
                       className={`${status.color} h-2 transition-all duration-500`}
