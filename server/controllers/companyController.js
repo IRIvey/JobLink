@@ -2,6 +2,7 @@ import Company from "../models/Company.js";
 import Job from "../models/Job.js";
 import { INDUSTRY_SKILLS } from "../models/Job.js";
 import bcrypt from "bcryptjs";
+import Application from "../models/Application.js";
 
 // --- GET Company Profile ---
 export const getCompanyProfile = async (req, res) => {
@@ -530,7 +531,7 @@ export const deleteJob = async (req, res) => {
 
 export const getDashboardStats = async (req, res) => {
   try {
-    const companyId = req.user._id;
+    const companyId = req.user.id;
 
     // Application model has a direct `company` field — no need to go through jobs
     // Reuse the built-in static method on the model
@@ -594,7 +595,7 @@ export const getDashboardStats = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 export const getCompanyApplications = async (req, res) => {
   try {
-    const companyId = req.user._id;
+    const companyId = req.user.id;
     const page  = Math.max(1, parseInt(req.query.page)  || 1);
     const limit = Math.min(50, parseInt(req.query.limit) || 10);
     const skip  = (page - 1) * limit;
