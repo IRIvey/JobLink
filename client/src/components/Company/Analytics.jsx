@@ -86,36 +86,62 @@ const Analytics = () => {
   const maxCount = Math.max(...analytics.applicationTrends.map(d => d.count), 1);
   const totalApps = analytics.applicationTrends.reduce((sum, day) => sum + day.count, 0);
 
-  // Group trends by week for cleaner display
-  const groupedTrends = analytics.applicationTrends.reduce((acc, day, idx) => {
+  // Smart grouping based on time range
+  const getGroupedTrends = () => {
     if (timeRange === "7d") {
-      // For 7 days, show each day
-      acc.push({
-        label: new Date(day.date).toLocaleDateString("en-US", { weekday: "short" }),
+      // Show each day for 7 days
+      return analytics.applicationTrends.map(day => ({
+        label: new Date(day.date).toLocaleDateString("en-US", { 
+          weekday: "short",
+          month: "short", 
+          day: "numeric" 
+        }),
         count: day.count,
-      });
+      }));
     } else if (timeRange === "30d") {
-      // For 30 days, group by week
-      const weekNum = Math.floor(idx / 7);
-      if (!acc[weekNum]) {
-        acc[weekNum] = {
-          label: `Week ${weekNum + 1}`,
-          count: 0,
-        };
+      // Show weekly totals with date ranges
+      const weeks = [];
+      for (let i = 0; i < analytics.applicationTrends.length; i += 7) {
+        const weekData = analytics.applicationTrends.slice(i, i + 7);
+        if (weekData.length === 0) continue;
+        
+        const firstDay = new Date(weekData[0].date);
+        const lastDay = new Date(weekData[weekData.length - 1].date);
+        const count = weekData.reduce((sum, d) => sum + d.count, 0);
+        
+        weeks.push({
+          label: `${firstDay.toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${lastDay.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
+          count: count,
+        });
       }
-      acc[weekNum].count += day.count;
+      return weeks;
+    } else if (timeRange === "90d") {
+      // Show monthly totals
+      const months = {};
+      analytics.applicationTrends.forEach(day => {
+        const monthKey = new Date(day.date).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+        if (!months[monthKey]) {
+          months[monthKey] = { label: monthKey, count: 0 };
+        }
+        months[monthKey].count += day.count;
+      });
+      return Object.values(months);
     } else {
-      // For longer periods, group by month
-      const monthLabel = new Date(day.date).toLocaleDateString("en-US", { month: "short" });
-      const existing = acc.find(g => g.label === monthLabel);
-      if (existing) {
-        existing.count += day.count;
-      } else {
-        acc.push({ label: monthLabel, count: day.count });
-      }
+      // For 1 year, show monthly
+      const months = {};
+      analytics.applicationTrends.forEach(day => {
+        const monthKey = new Date(day.date).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+        if (!months[monthKey]) {
+          months[monthKey] = { label: monthKey, count: 0 };
+        }
+        months[monthKey].count += day.count;
+      });
+      return Object.values(months);
     }
-    return acc;
-  }, []);
+  };
+
+  const groupedTrends = getGroupedTrends();
+  const groupedMaxCount = Math.max(...groupedTrends.map(g => g.count), 1);
 
   return (
     <div className="space-y-6 pb-8">
@@ -202,7 +228,7 @@ const Analytics = () => {
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        {/* Application Trends - HORIZONTAL BARS LIKE STATUS */}
+        {/* Application Trends - WITH PROPER DATES */}
         <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-base sm:text-lg font-semibold flex items-center gap-2">
@@ -214,23 +240,33 @@ const Analytics = () => {
             </span>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {groupedTrends.length > 0 ? (
               groupedTrends.map((item, idx) => {
-                const percentage = maxCount > 0 ? ((item.count / maxCount) * 100).toFixed(1) : 0;
+                const percentage = groupedMaxCount > 0 
+                  ? Math.max(((item.count / groupedMaxCount) * 100), item.count > 0 ? 5 : 0).toFixed(1)
+                  : 0;
                 
                 return (
                   <div key={idx}>
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="font-medium">{item.label}</span>
+                      <span className="font-medium text-gray-700">{item.label}</span>
                       <span className="text-gray-600">
-                        {item.count} applications
+                        {item.count} {item.count === 1 ? 'application' : 'applications'}
                       </span>
                     </div>
 
                     <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden">
                       <div
-                        className="bg-indigo-500 h-3 transition-all duration-500 rounded-full"
+                        className={`h-3 transition-all duration-500 rounded-full ${
+                          item.count === 0 
+                            ? 'bg-gray-300' 
+                            : item.count <= groupedMaxCount / 3
+                            ? 'bg-indigo-400'
+                            : item.count <= (groupedMaxCount * 2) / 3
+                            ? 'bg-indigo-500'
+                            : 'bg-indigo-600'
+                        }`}
                         style={{ width: `${percentage}%` }}
                       />
                     </div>
@@ -242,6 +278,13 @@ const Analytics = () => {
                 <p className="text-sm">No application data available</p>
               </div>
             )}
+          </div>
+
+          {/* Period Info */}
+          <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500 text-center">
+            {timeRange === "7d" && "Showing daily breakdown"}
+            {timeRange === "30d" && "Showing weekly totals"}
+            {(timeRange === "90d" || timeRange === "1y") && "Showing monthly totals"}
           </div>
         </div>
 
