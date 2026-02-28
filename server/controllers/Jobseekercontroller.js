@@ -30,6 +30,7 @@ export const getJobSeekerProfile = async (req, res) => {
     });
   }
 };
+
 // @desc    Search Jobs with Filters
 // @route   GET /api/jobseeker/jobs/search
 // @access  Private (JobSeeker only)
@@ -56,8 +57,8 @@ export const searchJobs = async (req, res) => {
     if (postedWithin) {
       const now = new Date();
       if (postedWithin === "24 hours") dateThreshold = new Date(now - 24 * 60 * 60 * 1000);
-      if (postedWithin === "7 days") dateThreshold = new Date(now - 7 * 24 * 60 * 60 * 1000);
-      if (postedWithin === "30 days") dateThreshold = new Date(now - 30 * 24 * 60 * 60 * 1000);
+      if (postedWithin === "7 days")   dateThreshold = new Date(now - 7 * 24 * 60 * 60 * 1000);
+      if (postedWithin === "30 days")  dateThreshold = new Date(now - 30 * 24 * 60 * 60 * 1000);
     }
 
     // Filters for Atlas Search compound.filter
@@ -75,17 +76,12 @@ export const searchJobs = async (req, res) => {
 
     if (jobType) {
       const types = Array.isArray(jobType) ? jobType : [jobType];
-      filterClauses.push({ terms: { path: "type", query: types } }); // ✅ fixed
+      filterClauses.push({ terms: { path: "type", query: types } });
     }
 
     if (experienceLevel) {
       filterClauses.push({ equals: { path: "experience", value: experienceLevel } });
     }
-
-    // ⚠️ Only keep if your Job schema has remote AND you indexed it
-    // if (remote === "true") {
-    //   filterClauses.push({ equals: { path: "remote", value: true } });
-    // }
 
     if (salaryMin) filterClauses.push({ range: { path: "salary.min", gte: Number(salaryMin) } });
     if (salaryMax) filterClauses.push({ range: { path: "salary.max", lte: Number(salaryMax) } });
@@ -95,7 +91,7 @@ export const searchJobs = async (req, res) => {
     // Sort
     let sortStage = { postedDate: -1 };
     if (sortBy === "salaryHigh") sortStage = { "salary.max": -1 };
-    if (sortBy === "salaryLow") sortStage = { "salary.min": 1 };
+    if (sortBy === "salaryLow")  sortStage = { "salary.min": 1 };
 
     const searchStage = {
       $search: {
@@ -106,8 +102,10 @@ export const searchJobs = async (req, res) => {
                 {
                   text: {
                     query,
-                    path: ["title", "description", "skills"],
-                    fuzzy: { maxEdits: 2, prefixLength: 2 },
+                    // ✅ added "location" so fuzzy works when typing city names
+                    path: ["title", "description", "skills", "location"],
+                    // ✅ prefixLength lowered to 1 so fuzzy has more room on longer words
+                    fuzzy: { maxEdits: 2, prefixLength: 1 },
                     synonyms: "job_synonyms",
                   },
                 },
@@ -116,7 +114,7 @@ export const searchJobs = async (req, res) => {
           filter: filterClauses,
           should: query
             ? [
-                { text: { query, path: "title", score: { boost: { value: 6 } } } },
+                { text: { query, path: "title",  score: { boost: { value: 6 } } } },
                 { text: { query, path: "skills", score: { boost: { value: 3 } } } },
               ]
             : [],
@@ -179,7 +177,9 @@ export const searchJobs = async (req, res) => {
   }
 };
 
-//suggest jobs based on title
+// @desc    Suggest jobs based on title
+// @route   GET /api/jobs/suggest?q=<term>
+// @access  Private (JobSeeker only)
 export const suggestJobs = async (req, res) => {
   try {
     const { q = "" } = req.query;
@@ -192,12 +192,12 @@ export const suggestJobs = async (req, res) => {
           autocomplete: {
             query: q,
             path: "title",
-            fuzzy: { maxEdits: 1, prefixLength: 2 }
-          }
-        }
+            fuzzy: { maxEdits: 1, prefixLength: 1 }, // ✅ consistent prefixLength
+          },
+        },
       },
       { $limit: 8 },
-      { $project: { _id: 1, title: 1, location: 1 } }
+      { $project: { _id: 1, title: 1, location: 1 } },
     ]);
 
     res.json({ success: true, suggestions });
