@@ -65,10 +65,10 @@ const DashboardHome = () => {
 
       // ✅ All three URLs now match companyRoutes.js
       const [statsRes, appsRes, jobsRes] = await Promise.all([
-        fetch(`${API_URL}/api/company/dashboard/stats`, { headers }),
-        fetch(`${API_URL}/api/company/dashboard/applications?page=1&limit=5`, { headers }),
-        fetch(`${API_URL}/api/company/dashboard/jobs?status=active&limit=5`, { headers }),
-      ]);
+  fetch(`${API_URL}/api/companies/dashboard/stats`, { headers }),        // companies (plural)
+  fetch(`${API_URL}/api/companies/dashboard/applications?page=1&limit=5`, { headers }),
+  fetch(`${API_URL}/api/companies/dashboard/jobs?status=active&limit=5`, { headers }),
+]);
 
       const [statsData, appsData, jobsData] = await Promise.all([
         statsRes.json(),
