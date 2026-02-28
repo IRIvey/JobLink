@@ -40,4 +40,4 @@ router.delete('/:id/save', protect, authorizeRoles('jobseeker'), unsaveJob);
 
 router.post("/:id/apply", protect, applyToJob);
 
-export default router;
+export default router;;
