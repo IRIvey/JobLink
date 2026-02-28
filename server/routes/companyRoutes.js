@@ -15,10 +15,12 @@ import {
   getCompanyJobs,
   updateJobStatus,
   updateJob,
-  deleteJob
+  deleteJob,
+  getCompanyJobsDashboard, // ✅ NEW
+  getDashboardStats,        // ✅ NEW
+  getCompanyApplications
 } from "../controllers/companyController.js";
 import { protect, authorizeRoles } from "../middleware/authMiddleware.js";
-import { upload } from "../middleware/upload.js"; // Multer middleware
 
 const router = express.Router();
 
@@ -36,16 +38,15 @@ router.put(
   "/profile/profile-photo",
   protect,
   authorizeRoles("company"),
-  uploadCompanyProfilePhoto // handles req.body.image
+  uploadCompanyProfilePhoto
 );
 
 router.put(
   "/profile/cover-photo",
   protect,
   authorizeRoles("company"),
-  uploadCompanyCoverPhoto // handles req.body.image
+  uploadCompanyCoverPhoto
 );
-
 
 // Certificates
 router.post("/profile/certificates", protect, authorizeRoles("company"), addCompanyCertificate);
@@ -60,9 +61,13 @@ router.post("/jobs", protect, authorizeRoles("company"), createJob);
 router.get("/categories", protect, authorizeRoles("company"), getJobCategories);
 router.get("/skills", protect, authorizeRoles("company"), getJobSkillsByCategory);
 router.get("/jobs", protect, authorizeRoles("company"), getCompanyJobs);
-
-
 router.patch("/jobs/:jobId/status", protect, authorizeRoles("company"), updateJobStatus);
 router.put("/jobs/:jobId", protect, authorizeRoles("company"), updateJob);
 router.delete("/jobs/:jobId", protect, authorizeRoles("company"), deleteJob);
+
+
+router.get("/dashboard/stats", protect, authorizeRoles("company"), getDashboardStats);
+router.get("/dashboard/applications", protect, authorizeRoles("company"), getCompanyApplications);
+router.get("/dashboard/jobs", protect, authorizeRoles("company"), getCompanyJobsDashboard);
+
 export default router;

@@ -527,3 +527,180 @@ export const deleteJob = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to delete job" });
   }
 };
+
+export const getDashboardStats = async (req, res) => {
+  try {
+    const companyId = req.user._id;
+
+    // Application model has a direct `company` field — no need to go through jobs
+    // Reuse the built-in static method on the model
+    const appStats = await Application.getCompanyStats(companyId);
+    // appStats = { total, pending, reviewing, interview, accepted, rejected }
+
+    // Active jobs for this company
+    const activeJobs = await Job.countDocuments({
+      company: companyId,
+      status: "active",
+    });
+
+    // NOTE: The Job model has no `views` field, so totalViews is always 0.
+    // Add a `views` field to your Job model if you want to track this.
+    const totalViews = 0;
+
+    // Avg time to hire: days between appliedDate and updatedAt for accepted applications
+    const acceptedApps = await Application.find({
+      company: companyId,
+      status: "accepted",
+    }).select("appliedDate updatedAt");
+
+    let avgTimeToHire = 0;
+    if (acceptedApps.length > 0) {
+      const totalDays = acceptedApps.reduce((sum, a) => {
+        const diff =
+          (new Date(a.updatedAt) - new Date(a.appliedDate)) /
+          (1000 * 60 * 60 * 24);
+        return sum + Math.max(0, diff); // guard against negative diff
+      }, 0);
+      avgTimeToHire = Math.round(totalDays / acceptedApps.length);
+    }
+
+    return res.status(200).json({
+      success: true,
+      stats: {
+        activeJobs,
+        totalApplications: appStats.total,
+        // "New" on the frontend maps to "pending" in the DB
+        newApplications: appStats.pending,
+        // "Interview Scheduled" on the frontend maps to "interview" in the DB
+        interviewScheduled: appStats.interview,
+        // "Hired" on the frontend maps to "accepted" in the DB
+        hired: appStats.accepted,
+        rejected: appStats.rejected,
+        totalViews,
+        avgTimeToHire,
+      },
+    });
+  } catch (error) {
+    console.error("getDashboardStats error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch dashboard stats",
+    });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/applications/company?page=1&limit=5
+// ─────────────────────────────────────────────────────────────────────────────
+export const getCompanyApplications = async (req, res) => {
+  try {
+    const companyId = req.user._id;
+    const page  = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit = Math.min(50, parseInt(req.query.limit) || 10);
+    const skip  = (page - 1) * limit;
+
+    const [applications, total] = await Promise.all([
+      Application.find({ company: companyId })
+        .sort({ appliedDate: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate({
+          path: "jobSeeker",            // ✅ correct field name from model
+          select: "fullName profilePhoto",
+        })
+        .populate({
+          path: "job",
+          select: "title",
+        }),
+      Application.countDocuments({ company: companyId }),
+    ]);
+
+    const formatted = applications.map((app) => ({
+      _id: app._id,
+      id:  app._id,
+      name:         app.jobSeeker?.fullName    || "Unknown",
+      profilePhoto: app.jobSeeker?.profilePhoto || "",
+      job:          app.job?.title             || "Unknown Job",
+      // ✅ correct date field is `appliedDate`, not `createdAt`
+      appliedDate: app.appliedDate
+        ? new Date(app.appliedDate).toLocaleDateString("en-US", {
+            year: "numeric", month: "short", day: "numeric",
+          })
+        : "",
+      // ✅ use the statusDisplay virtual so the frontend gets
+      //    "New" / "Reviewing" / "Interview Scheduled" / "Hired" / "Rejected"
+      //    instead of "pending" / "reviewing" / "interview" / "accepted" / "rejected"
+      status: app.statusDisplay,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      applications: formatted,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    console.error("getCompanyApplications error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch applications",
+    });
+  }
+};
+
+export const getCompanyJobsDashboard = async (req, res) => {
+  try {
+    const companyId = req.user?.id;
+    if (!companyId || req.user.userType !== "company")
+      return res.status(401).json({ message: "Unauthorized" });
+
+    const limit        = Math.min(50, parseInt(req.query.limit) || 10);
+    const statusFilter = req.query.status; // e.g. "active"
+
+    const query = { company: companyId };
+    if (statusFilter) query.status = statusFilter;
+
+    const jobs = await Job.find(query)
+      .sort({ postedDate: -1 })
+      .limit(limit);
+
+    const jobIds = jobs.map((j) => j._id);
+
+    // Count applicants per job in one query — avoids N+1
+    const applicantCounts = await Application.aggregate([
+      { $match: { job: { $in: jobIds } } },
+      { $group: { _id: "$job", count: { $sum: 1 } } },
+    ]);
+
+    const countMap = {};
+    applicantCounts.forEach(({ _id, count }) => {
+      countMap[_id.toString()] = count;
+    });
+
+    const formatted = jobs.map((job) => ({
+      _id:        job._id,
+      id:         job._id,
+      title:      job.title    || "",
+      location:   job.location || "",
+      views:      0, // Job model has no views field yet — add it when needed
+      applicants: countMap[job._id.toString()] || 0,
+      status:     job.status || "active",
+    }));
+
+    return res.status(200).json({
+      success: true,
+      jobs: formatted,
+    });
+  } catch (error) {
+    console.error("getCompanyJobsDashboard error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch jobs",
+      error: error.message,
+    });
+  }
+};
