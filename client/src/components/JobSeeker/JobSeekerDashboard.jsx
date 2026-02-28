@@ -4,7 +4,6 @@ import {
   Briefcase,
   User,
   FileText,
-  Search,
   LogOut,
   Home,
   Bookmark,
@@ -20,33 +19,29 @@ import ChatInterface from "./ChatInterface";
 import NotificationPanel from "../NotificationPanel";
 import CompanyProfilePublic from "../Company/CompanyProfilePublic";
 
+// ✅ NEW
+import JobSeekerSearchOverlay from "./JobSeekerSearchOverlay";
+
 const JobSeekerDashboard = () => {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("home");
   const [userData, setUserData] = useState(null);
-
-  // Company view
   const [selectedCompanyId, setSelectedCompanyId] = useState(null);
 
-  // ✅ Top Search (Navbar) states
+  // ✅ Single query state — passed into overlay
   const [topQuery, setTopQuery] = useState("");
   const [dashboardSearchQuery, setDashboardSearchQuery] = useState("");
-  const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     fetchUserData();
   }, []);
 
-  // Sync browser back button with tabs
   useEffect(() => {
     const handlePopState = (event) => {
       if (event.state && event.state.tab) {
         setActiveTab(event.state.tab);
         setSelectedCompanyId(event.state.cId || null);
-
-        // ✅ optional: restore query if coming back to search
         if (event.state.q) {
           setDashboardSearchQuery(event.state.q);
           setTopQuery(event.state.q);
@@ -56,7 +51,6 @@ const JobSeekerDashboard = () => {
         setSelectedCompanyId(null);
       }
     };
-
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
@@ -65,14 +59,10 @@ const JobSeekerDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch("http://localhost:5001/api/auth/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
-      if (response.ok) {
-        setUserData(data.user);
-      }
+      if (response.ok) setUserData(data.user);
     } catch (error) {
       console.error("Error fetching user data:", error);
     }
@@ -88,65 +78,31 @@ const JobSeekerDashboard = () => {
     navigate("/resume-builder");
   };
 
-  // ✅ Debounced suggestions call (Atlas Search suggest endpoint)
-  useEffect(() => {
-    const t = setTimeout(async () => {
-      const q = topQuery.trim();
-      if (!q) {
-        setSuggestions([]);
-        setShowSuggestions(false);
-        return;
-      }
-
-      try {
-        const res = await fetch(
-          `http://localhost:5001/api/jobs/suggest?q=${encodeURIComponent(q)}`
-        );
-        const data = await res.json();
-
-        if (data.success) {
-          setSuggestions(data.suggestions || []);
-          setShowSuggestions(true);
-        } else {
-          setSuggestions([]);
-          setShowSuggestions(false);
-        }
-      } catch (err) {
-        console.error("Suggestion fetch error:", err);
-        setSuggestions([]);
-        setShowSuggestions(false);
-      }
-    }, 250);
-
-    return () => clearTimeout(t);
-  }, [topQuery]);
-
-  // ✅ Run search from top bar: switch tab + pass query to JobSearch
-  const runTopSearch = (q) => {
-    const cleaned = (q || "").trim();
-    if (!cleaned) return;
-
-    setTopQuery(cleaned);
-    setDashboardSearchQuery(cleaned);
-
-    setActiveTab("search");
-    setShowSuggestions(false);
-
-    // Keep history consistent (like your other tabs)
+  /**
+   * Called by JobSeekerSearchOverlay when the user picks a result or hits Enter.
+   * tab  = which sidebar tab to activate
+   * q    = optional query to pass into JobSearch
+   */
+  const handleOverlayNavigate = (tab, q) => {
+    if (q !== undefined) {
+      setDashboardSearchQuery(q);
+      setTopQuery(q);
+    }
+    setActiveTab(tab);
     window.history.pushState(
-      { tab: "search", q: cleaned },
+      { tab, q: q || "" },
       "",
       window.location.pathname
     );
   };
 
   const navigation = [
-    { id: "home", label: "Home", icon: Home },
-    { id: "search", label: "Search Jobs", icon: Search },
-    { id: "applications", label: "My Applications", icon: Briefcase },
-    { id: "saved", label: "Saved Jobs", icon: Bookmark },
-    { id: "resume", label: "My Resume", icon: FileText, isExternal: true },
-    { id: "profile", label: "Profile", icon: User },
+    { id: "home",         label: "Home",            icon: Home },
+    { id: "search",       label: "Search Jobs",      icon: Briefcase },
+    { id: "applications", label: "My Applications",  icon: FileText },
+    { id: "saved",        label: "Saved Jobs",        icon: Bookmark },
+    { id: "resume",       label: "My Resume",         icon: FileText, isExternal: true },
+    { id: "profile",      label: "Profile",           icon: User },
   ];
 
   const renderContent = () => {
@@ -168,10 +124,7 @@ const JobSeekerDashboard = () => {
         );
 
       case "search":
-        // ✅ pass query from top bar to JobSearch
-        return (
-          <JobSearch userData={userData} initialQuery={dashboardSearchQuery} />
-        );
+        return <JobSearch userData={userData} initialQuery={dashboardSearchQuery} />;
 
       case "applications":
         return <Applications userData={userData} />;
@@ -204,57 +157,20 @@ const JobSeekerDashboard = () => {
       <nav className="bg-white border-b border-gray-200 fixed w-full top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
+
             {/* Logo */}
             <div className="flex items-center gap-2">
               <Briefcase className="text-indigo-600" size={32} />
               <span className="text-2xl font-bold text-gray-900">JobLink</span>
             </div>
 
-            {/* ✅ Search Bar */}
-            <div className="flex-1 max-w-2xl mx-8">
-              <div className="relative">
-                <Search
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  size={20}
-                />
-
-                <input
-                  type="text"
-                  value={topQuery}
-                  onChange={(e) => setTopQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      runTopSearch(topQuery);
-                    }
-                  }}
-                  onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                  onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                  placeholder="Search jobs, companies, skills..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                />
-
-                {/* ✅ Suggestions Dropdown */}
-                {showSuggestions && suggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg mt-2 z-50 overflow-hidden">
-                    {suggestions.map((s) => (
-                      <button
-                        key={s._id}
-                        type="button"
-                        onMouseDown={(e) => e.preventDefault()} // prevent blur before click
-                        onClick={() => runTopSearch(s.title)}
-                        className="w-full text-left px-4 py-3 hover:bg-gray-50 flex justify-between"
-                      >
-                        <span className="text-gray-900">{s.title}</span>
-                        <span className="text-gray-500 text-sm">
-                          {s.location || ""}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* ✅ REPLACED: static input + manual suggestions → JobSeekerSearchOverlay */}
+            <JobSeekerSearchOverlay
+              query={topQuery}
+              onChange={setTopQuery}
+              userData={userData}
+              onNavigate={handleOverlayNavigate}
+            />
 
             {/* Right Side Icons */}
             <div className="flex items-center gap-4">
@@ -291,7 +207,8 @@ const JobSeekerDashboard = () => {
       {/* Main Layout */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8">
         <div className="flex gap-6">
-          {/* Left Sidebar - Navigation */}
+
+          {/* Left Sidebar */}
           <aside className="w-64 flex-shrink-0">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 sticky top-20">
               <nav className="p-4 space-y-1">
@@ -316,8 +233,6 @@ const JobSeekerDashboard = () => {
                       key={item.id}
                       onClick={() => {
                         setActiveTab(item.id);
-
-                        // ✅ if user clicks Search Jobs tab, use current topQuery
                         if (item.id === "search") {
                           setDashboardSearchQuery(topQuery.trim());
                           window.history.pushState(
@@ -348,40 +263,31 @@ const JobSeekerDashboard = () => {
             </div>
           </aside>
 
-          {/* Main Content Area */}
+          {/* Main Content */}
           <main className="flex-1">{renderContent()}</main>
 
           {/* Right Sidebar */}
           <aside className="w-80 flex-shrink-0">
             <div className="space-y-4 sticky top-20">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">
-                  Profile Strength
-                </h3>
+                <h3 className="font-semibold text-gray-900 mb-4">Profile Strength</h3>
                 <div className="mb-3">
                   <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-indigo-600 h-2 rounded-full"
-                      style={{ width: "60%" }}
-                    ></div>
+                    <div className="bg-indigo-600 h-2 rounded-full" style={{ width: "60%" }}></div>
                   </div>
                   <p className="text-sm text-gray-600 mt-2">60% Complete</p>
                 </div>
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-center gap-2 text-gray-600">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    Email verified
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>Email verified
                   </li>
                   <li className="flex items-center gap-2 text-gray-600">
-                    <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-                    Add skills
+                    <div className="w-2 h-2 bg-gray-300 rounded-full"></div>Add skills
                   </li>
                   <li className="flex items-center gap-2 text-gray-600">
-                    <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-                    Upload resume
+                    <div className="w-2 h-2 bg-gray-300 rounded-full"></div>Upload resume
                   </li>
                 </ul>
-
                 <button
                   onClick={handleResumeBuilder}
                   className="w-full mt-4 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2"
