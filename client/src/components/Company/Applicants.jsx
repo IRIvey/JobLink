@@ -25,7 +25,74 @@ import {
   Globe,
   ExternalLink,
   Languages,
+  Sparkles,
+  TrendingUp,
 } from "lucide-react";
+
+/* ================= AI SUMMARY MODAL ================= */
+const AISummaryModal = ({ summary, onClose, loading }) => {
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl p-8 max-w-2xl w-full">
+          <div className="flex flex-col items-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-200 border-t-indigo-600 mb-4"></div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Analyzing Applicants</h3>
+            <p className="text-gray-600 text-center">AI is reviewing all applications and generating insights...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl max-w-4xl w-full my-8 max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 rounded-t-xl">
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <Sparkles size={28} />
+                <h2 className="text-2xl font-bold">AI Applicant Analysis</h2>
+              </div>
+              <p className="text-indigo-100 text-sm">Smart insights to help you make better hiring decisions</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+            >
+              <X size={24} />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-8">
+          {summary ? (
+            <div className="prose max-w-none">
+              <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
+                {summary}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-red-600 font-semibold">Failed to generate summary</p>
+              <p className="text-gray-600 mt-2">Please try again</p>
+            </div>
+          )}
+        </div>
+
+        <div className="border-t border-gray-200 p-6 bg-gray-50 rounded-b-xl sticky bottom-0">
+          <button
+            onClick={onClose}
+            className="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold transition-colors"
+          >
+            Close Analysis
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 /* ================= JOB SEEKER PROFILE MODAL ================= */
 const JobSeekerProfileModal = ({ applicationId, onClose }) => {
@@ -367,8 +434,6 @@ useEffect(() => {
   );
 };
 
-/* ================= ENHANCED RESUME VIEWER MODAL ================= */
-/* ================= ENHANCED RESUME VIEWER MODAL ================= */
 /* ================= ENHANCED RESUME VIEWER MODAL ================= */
 const ResumeViewerModal = ({ resumeUrl, candidateName, onClose }) => {
   const [pdfUrl, setPdfUrl] = useState(null);
@@ -970,6 +1035,9 @@ const Applicants = () => {
   const [showInterviewModal, setShowInterviewModal] = useState(false);
   const [showHiringModal, setShowHiringModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [aiSummary, setAiSummary] = useState(null);
+  const [loadingSummary, setLoadingSummary] = useState(false);
 
   const statuses = ["All", "New", "Reviewing", "Interview Scheduled", "Rejected", "Hired"];
 
@@ -1023,6 +1091,58 @@ const Applicants = () => {
       }
     } catch (err) {
       console.error("Failed to fetch stats:", err);
+    }
+  };
+
+  const generateAISummary = async () => {
+    if (applicationsData.length === 0) {
+      alert("No applications to analyze");
+      return;
+    }
+
+    setLoadingSummary(true);
+    setShowSummaryModal(true);
+    setAiSummary(null);
+
+    try {
+      // Prepare applicant data for AI analysis
+      const applicantsForAI = applicationsData.map(app => ({
+        name: app.name,
+        job: app.job,
+        experience: app.experience,
+        rating: app.rating,
+        skills: app.skills,
+        status: app.status,
+        location: app.location,
+        coverLetter: app.coverLetter ? app.coverLetter.substring(0, 200) : null
+      }));
+
+      const res = await fetch(`${API_URL}/api/ai/analyze-applicants`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          promptType: "analyze_applicants",
+          applicants: applicantsForAI,
+          totalCount: applicationsData.length
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.message || "AI request failed");
+      }
+
+      setAiSummary(data.text || "No analysis generated");
+    } catch (err) {
+      console.error("AI Summary error:", err);
+      setAiSummary(null);
+      alert("Failed to generate AI summary: " + err.message);
+    } finally {
+      setLoadingSummary(false);
     }
   };
 
@@ -1193,24 +1313,33 @@ const Applicants = () => {
     return colors[status] || "bg-gray-100 text-gray-700";
   };
 
-  // ✅ FIXED FUNCTION - Gets the correct jobSeeker ID
-
-const handleProfileClick = (app) => {
-  if (!app?.id) {
-    alert("Application ID missing");
-    return;
-  }
-  setSelectedJobSeekerId(app.id); // ✅ store applicationId in this state
-  setShowProfileModal(true);
-};
-
+  const handleProfileClick = (app) => {
+    if (!app?.id) {
+      alert("Application ID missing");
+      return;
+    }
+    setSelectedJobSeekerId(app.id);
+    setShowProfileModal(true);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-8">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-6 mb-6 rounded-xl shadow-sm">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Applicants</h1>
-        <p className="text-gray-600 text-sm md:text-base">Review and manage job applications</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Applicants</h1>
+            <p className="text-gray-600 text-sm md:text-base">Review and manage job applications</p>
+          </div>
+          <button
+            onClick={generateAISummary}
+            disabled={applicationsData.length === 0}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
+          >
+            <Sparkles size={20} />
+            Generate AI Summary
+          </button>
+        </div>
       </div>
 
       <div className="px-2 space-y-6">
@@ -1361,7 +1490,6 @@ const handleProfileClick = (app) => {
                     {/* Header */}
                     <div className="flex items-start justify-between mb-6 pb-6 border-b">
                       <div className="flex items-center gap-4">
-                        {/* ✅ CLICKABLE PROFILE PHOTO IN DETAIL */}
                         {selectedApplication.profilePhoto ? (
                           <img 
                             src={selectedApplication.profilePhoto} 
@@ -1534,6 +1662,14 @@ const handleProfileClick = (app) => {
       </div>
 
       {/* Modals */}
+      {showSummaryModal && (
+        <AISummaryModal
+          summary={aiSummary}
+          loading={loadingSummary}
+          onClose={() => setShowSummaryModal(false)}
+        />
+      )}
+
       {showResumeModal && selectedApplication && selectedApplication.resume && (
         <ResumeViewerModal
           resumeUrl={selectedApplication.resume}
@@ -1542,15 +1678,15 @@ const handleProfileClick = (app) => {
         />
       )}
 
-     {showProfileModal && selectedJobSeekerId && (
-  <JobSeekerProfileModal
-    applicationId={selectedJobSeekerId}
-    onClose={() => {
-      setShowProfileModal(false);
-      setSelectedJobSeekerId(null);
-    }}
-  />
-)}
+      {showProfileModal && selectedJobSeekerId && (
+        <JobSeekerProfileModal
+          applicationId={selectedJobSeekerId}
+          onClose={() => {
+            setShowProfileModal(false);
+            setSelectedJobSeekerId(null);
+          }}
+        />
+      )}
 
       {showInterviewModal && selectedApplication && (
         <InterviewScheduleModal

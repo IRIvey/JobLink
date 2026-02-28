@@ -11,10 +11,13 @@ import {
   getSavedJobs,
   applyToJob,
   getUserApplications
+
 } from '../controllers/jobController.js';
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+
 
 // 1. PUBLIC GENERAL ROUTES
 router.get('/', getAllJobs);
