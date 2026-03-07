@@ -194,16 +194,12 @@ export const getUserApplications = async (req, res) => {
 // Get all jobs with filters
 export const getAllJobs = async (req, res) => {
   try {
-    const {
-      location,
-      type,
-      experience,
-      skills,
-      search,
-      minSalary,
-      maxSalary,
-      status = "active",
-    } = req.query;
+
+const {
+  location, type, experience, skills, minSalary, maxSalary, status = "active",
+} = req.query;
+
+const search = req.query.query || req.query.search || "";
 
     const query = { status };
 
