@@ -191,6 +191,17 @@ export const getUserApplications = async (req, res) => {
     });
   }
 };
+
+const levenshtein = (a, b) => {
+  const dp = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+  for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++)
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+  return dp[a.length][b.length];
+};
+
+
 // Get all jobs with filters
 export const getAllJobs = async (req, res) => {
   try {
@@ -245,17 +256,31 @@ if (search) {
       if (maxSalary) query["salary.max"] = { $lte: Number(maxSalary) };
     }
 
-    const jobs = await Job.find(query)
-      // ✅ populate the Job field: "company"
-      .populate("company", "companyName logo industry")
-      .sort({ postedDate: -1 })
-      .limit(50);
+let jobs = await Job.find(query)
+  .populate("company", "companyName logo industry")
+  .sort({ postedDate: -1 })
+  .limit(50);
 
-    res.status(200).json({
-      success: true,
-      count: jobs.length,
-      jobs,
-    });
+// Fuzzy fallback if no results
+if (jobs.length === 0 && search.trim()) {
+  const term = search.trim().toLowerCase();
+  const allJobs = await Job.find({ status })
+    .populate("company", "companyName logo industry")
+    .sort({ postedDate: -1 })
+    .limit(200);
+
+  jobs = allJobs.filter(job => {
+    const words = (job.title + " " + (job.skills || []).join(" ")).toLowerCase().split(/\s+/);
+    return words.some(w => levenshtein(term, w) <= 2);
+  });
+}
+
+res.status(200).json({
+  success: true,
+  count: jobs.length,
+  jobs,
+});
+
   } catch (error) {
     res.status(500).json({
       success: false,
