@@ -26,7 +26,12 @@ const log = (...args) => {
   if (DEBUG) console.log("[JobSeekerSearch]", ...args);
 };
 
-const buildRegex = (term) => new RegExp(term.trim(), "i");
+const buildRegex = (term) => {
+  const escaped = term.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // allow up to 1 extra/missing char between tokens (poor-man's fuzzy)
+  const fuzzy = escaped.split(/\s+/).join(".{0,3}");
+  return new RegExp(fuzzy, "i");
+};
 
 // ─── 1. Search Saved Jobs ────────────────────────────────────────────────────
 /**
