@@ -228,13 +228,20 @@ export const getAllJobs = async (req, res) => {
       query.skills = { $in: skillsArray };
     }
 
-    // Search in title and description
-    if (search) {
-      query.$or = [
-        { title: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
-      ];
-    }
+// Search in title and description
+if (search) {
+  const terms = search.trim().split(/\s+/).filter(Boolean);
+  const regexes = terms.map((t) => new RegExp(t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
+
+  query.$and = regexes.map((r) => ({
+    $or: [
+      { title: r },
+      { description: r },
+      { skills: r },
+      { location: r },
+    ],
+  }));
+}
 
     // Salary range filter (simple version)
     if (minSalary || maxSalary) {
