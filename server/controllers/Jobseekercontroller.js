@@ -36,140 +36,38 @@ export const getJobSeekerProfile = async (req, res) => {
 // @access  Private (JobSeeker only)
 export const searchJobs = async (req, res) => {
   try {
-    const {
-      query,
-      location,
-      jobType,
-      experienceLevel,
-      remote,
-      salaryMin,
-      salaryMax,
-      postedWithin,
-      page = 1,
-      limit = 10,
-      sortBy = "postedDate",
-    } = req.query;
-
+    const { query, location, jobType, experienceLevel, salaryMin, salaryMax, page = 1, limit = 10 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    // postedWithin -> dateThreshold
-    let dateThreshold = null;
-    if (postedWithin) {
-      const now = new Date();
-      if (postedWithin === "24 hours") dateThreshold = new Date(now - 24 * 60 * 60 * 1000);
-      if (postedWithin === "7 days")   dateThreshold = new Date(now - 7 * 24 * 60 * 60 * 1000);
-      if (postedWithin === "30 days")  dateThreshold = new Date(now - 30 * 24 * 60 * 60 * 1000);
+    const filter = { status: "active" };
+
+    if (query && query.trim()) {
+      const terms = query.trim().split(/\s+/).filter(Boolean);
+      const regexes = terms.map((t) => new RegExp(t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
+      filter.$and = regexes.map((r) => ({
+        $or: [{ title: r }, { description: r }, { skills: r }, { location: r }],
+      }));
     }
 
-    // Filters for Atlas Search compound.filter
-    const filterClauses = [{ equals: { path: "status", value: "active" } }];
+    if (location) filter.location = { $regex: location, $options: "i" };
+    if (jobType)  filter.type = Array.isArray(jobType) ? { $in: jobType } : jobType;
+    if (experienceLevel) filter.experience = experienceLevel;
+    if (salaryMin) filter["salary.min"] = { $gte: Number(salaryMin) };
+    if (salaryMax) filter["salary.max"] = { $lte: Number(salaryMax) };
 
-    if (location) {
-      filterClauses.push({
-        autocomplete: {
-          query: location,
-          path: "location",
-          fuzzy: { maxEdits: 1 },
-        },
-      });
-    }
-
-    if (jobType) {
-      const types = Array.isArray(jobType) ? jobType : [jobType];
-      filterClauses.push({ terms: { path: "type", query: types } });
-    }
-
-    if (experienceLevel) {
-      filterClauses.push({ equals: { path: "experience", value: experienceLevel } });
-    }
-
-    if (salaryMin) filterClauses.push({ range: { path: "salary.min", gte: Number(salaryMin) } });
-    if (salaryMax) filterClauses.push({ range: { path: "salary.max", lte: Number(salaryMax) } });
-
-    if (dateThreshold) filterClauses.push({ range: { path: "postedDate", gte: dateThreshold } });
-
-    // Sort
-    let sortStage = { postedDate: -1 };
-    if (sortBy === "salaryHigh") sortStage = { "salary.max": -1 };
-    if (sortBy === "salaryLow")  sortStage = { "salary.min": 1 };
-
-    const searchStage = {
-      $search: {
-        index: "jobs_search",
-        compound: {
-          must: query
-            ? [
-                {
-                  text: {
-                    query,
-                    // ✅ added "location" so fuzzy works when typing city names
-                    path: ["title", "description", "skills", "location"],
-                    // ✅ prefixLength lowered to 1 so fuzzy has more room on longer words
-                    fuzzy: { maxEdits: 2, prefixLength: 1 },
-                    synonyms: "job_synonyms",
-                  },
-                },
-              ]
-            : [],
-          filter: filterClauses,
-          should: query
-            ? [
-                { text: { query, path: "title",  score: { boost: { value: 6 } } } },
-                { text: { query, path: "skills", score: { boost: { value: 3 } } } },
-              ]
-            : [],
-          minimumShouldMatch: query ? 1 : 0,
-        },
-      },
-    };
-
-    const pipeline = [
-      searchStage,
-      { $sort: sortStage },
-      { $skip: skip },
-      { $limit: Number(limit) },
-
-      // populate company
-      {
-        $lookup: {
-          from: "companies",
-          localField: "company",
-          foreignField: "_id",
-          as: "company",
-        },
-      },
-      { $unwind: { path: "$company", preserveNullAndEmptyArrays: true } },
-
-      {
-        $project: {
-          title: 1,
-          description: 1,
-          location: 1,
-          type: 1,
-          experience: 1,
-          salary: 1,
-          skills: 1,
-          postedDate: 1,
-          company: { companyName: 1, logo: 1, location: 1 },
-          score: { $meta: "searchScore" },
-        },
-      },
-    ];
-
-    const jobs = await Job.aggregate(pipeline);
-
-    const totalAgg = await Job.aggregate([searchStage, { $count: "total" }]);
-    const total = totalAgg[0]?.total || 0;
+    const [jobs, total] = await Promise.all([
+      Job.find(filter)
+        .populate("company", "companyName logo location")
+        .sort({ postedDate: -1 })
+        .skip(skip)
+        .limit(Number(limit)),
+      Job.countDocuments(filter),
+    ]);
 
     res.json({
       success: true,
       jobs,
-      pagination: {
-        page: Number(page),
-        limit: Number(limit),
-        total,
-        pages: Math.ceil(total / Number(limit)),
-      },
+      pagination: { page: Number(page), limit: Number(limit), total, pages: Math.ceil(total / Number(limit)) },
     });
   } catch (error) {
     console.error("Search Jobs Error:", error);
