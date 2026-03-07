@@ -30,16 +30,46 @@ const CompanyDashboard = () => {
   const [applications, setApplications] = useState([]);
   const [globalSearch, setGlobalSearch] = useState("");
 
+  // ✅ NEW: real stats from the dashboard API
+  const [dashboardStats, setDashboardStats] = useState({
+    activeJobs: 0,
+    totalApplications: 0,
+    hired: 0,
+  });
+
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+
   useEffect(() => {
     fetchCompanyData();
     fetchJobs();
     fetchApplications();
+    fetchDashboardStats(); // ✅ fetch real stats
   }, []);
+
+  // ✅ NEW: fetch stats from the same endpoint DashboardHome uses
+  const fetchDashboardStats = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/api/companies/dashboard/stats`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setDashboardStats({
+          activeJobs: data.stats.activeJobs,
+          totalApplications: data.stats.totalApplications,
+          hired: data.stats.hired,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to fetch dashboard stats:", err);
+    }
+  };
 
   const fetchCompanyData = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5001/api/auth/me", {
+      const res = await fetch(`${API_URL}/api/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -52,7 +82,7 @@ const CompanyDashboard = () => {
   const fetchJobs = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5001/api/companies/jobs", {
+      const res = await fetch(`${API_URL}/api/companies/jobs`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) return;
@@ -66,7 +96,7 @@ const CompanyDashboard = () => {
   const fetchApplications = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5001/api/applications", {
+      const res = await fetch(`${API_URL}/api/applications`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -104,6 +134,7 @@ const CompanyDashboard = () => {
           <PostJob
             onJobPosted={() => {
               fetchJobs();
+              fetchDashboardStats(); // ✅ refresh stats after posting a job
               setActiveTab("jobs");
             }}
           />
@@ -204,24 +235,25 @@ const CompanyDashboard = () => {
         <main className="flex-1 space-y-6 min-w-0">
           {activeTab === "home" && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+              {/* ✅ Now uses real API stats instead of jobs.length / applications.length */}
               <StatBox
                 icon={Briefcase}
                 label="Total Jobs Posted"
-                value={jobs.length}
+                value={dashboardStats.activeJobs}
                 color="bg-indigo-100"
                 textColor="text-indigo-600"
               />
               <StatBox
                 icon={FileText}
                 label="Applications"
-                value={applications.length}
+                value={dashboardStats.totalApplications}
                 color="bg-green-100"
                 textColor="text-green-600"
               />
               <StatBox
                 icon={CheckCircle}
                 label="Total Hired"
-                value={jobs.filter((j) => j.status === "Hired").length}
+                value={dashboardStats.hired}
                 color="bg-purple-100"
                 textColor="text-purple-600"
               />

@@ -2,11 +2,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import { 
   Briefcase, 
   Users, 
-  Eye, 
+   Eye,
   MapPin, 
   TrendingUp,
-  Clock,
-  UserCheck,
   XCircle,
   Calendar,
   ArrowUpRight,
@@ -45,10 +43,7 @@ const DashboardHome = () => {
     totalApplications: 0,
     newApplications: 0,
     interviewScheduled: 0,
-    hired: 0,
     rejected: 0,
-    totalViews: 0,
-    avgTimeToHire: 0,
   });
   
   const [recentApplications, setRecentApplications] = useState([]);
@@ -63,12 +58,11 @@ const DashboardHome = () => {
       const token = localStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
 
-      // ✅ All three URLs now match companyRoutes.js
       const [statsRes, appsRes, jobsRes] = await Promise.all([
-  fetch(`${API_URL}/api/companies/dashboard/stats`, { headers }),        // companies (plural)
-  fetch(`${API_URL}/api/companies/dashboard/applications?page=1&limit=5`, { headers }),
-  fetch(`${API_URL}/api/companies/dashboard/jobs?status=active&limit=5`, { headers }),
-]);
+        fetch(`${API_URL}/api/companies/dashboard/stats`, { headers }),
+        fetch(`${API_URL}/api/companies/dashboard/applications?page=1&limit=5`, { headers }),
+        fetch(`${API_URL}/api/companies/dashboard/jobs?status=active&limit=5`, { headers }),
+      ]);
 
       const [statsData, appsData, jobsData] = await Promise.all([
         statsRes.json(),
@@ -134,7 +128,7 @@ const DashboardHome = () => {
       </div>
 
       {/* Main Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard 
           icon={Briefcase} 
           label="Active Job Postings" 
@@ -159,24 +153,10 @@ const DashboardHome = () => {
           trendValue="+15%"
           trendUp={true}
         />
-        <StatCard 
-          icon={UserCheck} 
-          label="Candidates Hired" 
-          value={stats.hired} 
-          trend="This month"
-          trendValue="+5%"
-          trendUp={true}
-        />
       </div>
 
       {/* Secondary Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
-          icon={Eye} 
-          label="Total Job Views" 
-          value={stats.totalViews} 
-          trend="Across all postings"
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <StatCard 
           icon={TrendingUp} 
           label="Total Applications" 
@@ -188,12 +168,6 @@ const DashboardHome = () => {
           label="Rejected" 
           value={stats.rejected} 
           trend="This month"
-        />
-        <StatCard 
-          icon={Clock} 
-          label="Avg. Time to Hire"
-          value={stats.avgTimeToHire != null ? `${stats.avgTimeToHire} days` : "—"}
-          trend="Industry avg: 42 days"
         />
       </div>
 

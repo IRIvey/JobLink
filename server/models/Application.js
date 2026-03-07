@@ -27,8 +27,6 @@ const applicationSchema = new mongoose.Schema({
   },
   resumeSnapshot: {
     type: Object,
-    // This will store the resume data at the time of application
-    // Example: { resumeUrl: "https://...", fileName: "resume.pdf" }
   },
   appliedDate: {
     type: Date,
@@ -62,7 +60,6 @@ const applicationSchema = new mongoose.Schema({
   feedback: {
     type: String,
     trim: true,
-    // Feedback from company to job seeker (especially for rejections/acceptances)
   },
   interviewScheduled: {
     type: Boolean,
@@ -101,22 +98,15 @@ const applicationSchema = new mongoose.Schema({
   },
 });
 
-// Prevent duplicate applications (same job seeker can't apply to same job twice)
 applicationSchema.index({ jobSeeker: 1, job: 1 }, { unique: true });
-
-// Index for faster queries
 applicationSchema.index({ company: 1, status: 1 });
 applicationSchema.index({ jobSeeker: 1, status: 1 });
 applicationSchema.index({ appliedDate: -1 });
 
-// ✅ FIXED: Removed next parameter and next() call
 applicationSchema.pre("save", function () {
-  // Update the updatedAt timestamp
   this.updatedAt = Date.now();
 
-  // If status has changed and this is not a new document
   if (this.isModified("status") && !this.isNew) {
-    // Add the new status to history
     this.statusHistory.push({
       status: this.status,
       updatedAt: Date.now(),
@@ -125,7 +115,6 @@ applicationSchema.pre("save", function () {
   }
 });
 
-// Virtual for getting the current status display name
 applicationSchema.virtual("statusDisplay").get(function () {
   const statusMap = {
     pending: "New",
@@ -137,7 +126,6 @@ applicationSchema.virtual("statusDisplay").get(function () {
   return statusMap[this.status] || this.status;
 });
 
-// Virtual for calculating days since application
 applicationSchema.virtual("daysSinceApplied").get(function () {
   const now = new Date();
   const applied = new Date(this.appliedDate);
@@ -146,7 +134,6 @@ applicationSchema.virtual("daysSinceApplied").get(function () {
   return diffDays;
 });
 
-// Method to add email to history
 applicationSchema.methods.addEmailRecord = function (emailType, subject, status = "sent") {
   this.emailsSent.push({
     type: emailType,
@@ -157,34 +144,29 @@ applicationSchema.methods.addEmailRecord = function (emailType, subject, status 
   return this.save();
 };
 
-// Method to update status with notes
 applicationSchema.methods.updateStatus = function (newStatus, notes = "", updatedBy = null) {
   this.status = newStatus;
   this.notes = notes;
-  
-  // The pre-save middleware will automatically add to statusHistory
   return this.save();
 };
 
-// Method to set hiring decision
 applicationSchema.methods.setHiringDecision = function (decision, feedback = "") {
   this.hiringDecision = {
     decision: decision,
     decisionDate: Date.now(),
     feedback: feedback,
   };
-  
-  // Also update the main status
   this.status = decision;
   this.feedback = feedback;
-  
   return this.save();
 };
 
-// Static method to get application statistics for a company
+// ✅ FIXED: Cast companyId to ObjectId — aggregation pipelines do NOT auto-cast strings like .find() does
 applicationSchema.statics.getCompanyStats = async function (companyId) {
+  const objectId = new mongoose.Types.ObjectId(companyId);
+
   const stats = await this.aggregate([
-    { $match: { company: companyId } },
+    { $match: { company: objectId } },
     {
       $group: {
         _id: "$status",
@@ -211,7 +193,6 @@ applicationSchema.statics.getCompanyStats = async function (companyId) {
   return formattedStats;
 };
 
-// Static method to get recent applications
 applicationSchema.statics.getRecentApplications = async function (companyId, limit = 10) {
   return this.find({ company: companyId })
     .populate("jobSeeker", "fullName email profilePhoto")
@@ -220,7 +201,6 @@ applicationSchema.statics.getRecentApplications = async function (companyId, lim
     .limit(limit);
 };
 
-// Static method to get applications by status
 applicationSchema.statics.getByStatus = async function (companyId, status) {
   return this.find({ company: companyId, status: status })
     .populate("jobSeeker", "fullName email phone profilePhoto skills experience")
@@ -228,7 +208,6 @@ applicationSchema.statics.getByStatus = async function (companyId, status) {
     .sort({ appliedDate: -1 });
 };
 
-// Enable virtuals in JSON output
 applicationSchema.set("toJSON", { virtuals: true });
 applicationSchema.set("toObject", { virtuals: true });
 

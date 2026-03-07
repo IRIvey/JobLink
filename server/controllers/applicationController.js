@@ -1,4 +1,5 @@
 import Application from "../models/Application.js";
+import mongoose from "mongoose";
 import { sendEmail, emailTemplates } from "../utils/emailService.js";
 import { createNotification, notificationTemplates } from "../utils/notificationService.js";
 
@@ -38,7 +39,6 @@ export const getCompanyApplications = async (req, res) => {
     const transformedApplications = applications.map((app) => {
       const jobSeeker = app.jobSeeker;
 
-      // ✅ Try multiple places to find the resume URL
       const resumeUrl =
         app.resumeSnapshot?.resumeUrl ||
         app.resumeSnapshot?.url ||
@@ -68,7 +68,6 @@ export const getCompanyApplications = async (req, res) => {
         resumeSnapshot: app.resumeSnapshot,
         applicationStatus: app.status,
         statusHistory: app.statusHistory || [],
-        // ✅ ADD: Include jobSeeker ID for profile viewing
         jobSeeker: jobSeeker?._id || null,
       };
     });
@@ -142,7 +141,6 @@ export const updateApplicationStatus = async (req, res) => {
 
     await application.save();
 
-    // Notify only if status actually changed
     if (oldStatus !== application.status) {
       const displayStatus = capitalizeStatus(application.status);
 
@@ -188,13 +186,11 @@ export const updateApplicationStatus = async (req, res) => {
   }
 };
 
-// ✅ FIXED: Make hiring decision - was missing proper ObjectId handling
 export const makeHiringDecision = async (req, res) => {
   try {
     const { applicationId, decision, feedback } = req.body;
     const companyId = req.user.id;
 
-    // Validate inputs
     if (!applicationId) {
       return res.status(400).json({ success: false, message: "Application ID is required" });
     }
@@ -218,8 +214,7 @@ export const makeHiringDecision = async (req, res) => {
       return res.status(404).json({ success: false, message: "Application not found" });
     }
 
-    // ✅ Update application using the model method
-    application.status = decision; // "accepted" or "rejected"
+    application.status = decision;
     application.feedback = feedback || "";
     application.hiringDecision = {
       decision,
@@ -231,7 +226,6 @@ export const makeHiringDecision = async (req, res) => {
 
     const companyName = application.company?.companyName || "The Company";
 
-    // ✅ Send detailed email based on decision
     if (decision === "accepted") {
       await sendEmail({
         to: application.jobSeeker.email,
@@ -274,7 +268,6 @@ export const makeHiringDecision = async (req, res) => {
       });
     }
 
-    // ✅ Create notification
     await createNotification({
       recipient: application.jobSeeker._id,
       recipientModel: "JobSeeker",
@@ -305,17 +298,17 @@ export const makeHiringDecision = async (req, res) => {
   }
 };
 
-// Get application statistics
+// ✅ FIXED: Cast companyId to ObjectId — aggregation $match does NOT auto-cast strings
 export const getApplicationStats = async (req, res) => {
   try {
-    const companyId = req.user.id;
+    const companyId = new mongoose.Types.ObjectId(req.user.id);
 
     const stats = await Application.aggregate([
       { $match: { company: companyId } },
       { $group: { _id: "$status", count: { $sum: 1 } } },
     ]);
 
-    const total = await Application.countDocuments({ company: companyId });
+    const total = await Application.countDocuments({ company: req.user.id });
 
     const formattedStats = { total, pending: 0, reviewing: 0, interview: 0, accepted: 0, rejected: 0 };
     stats.forEach((stat) => { formattedStats[stat._id] = stat.count; });
@@ -363,9 +356,6 @@ function calculateRating(jobSeeker) {
   return Math.min(rating, 5.0).toFixed(1);
 }
 
-
-
-
 export const getApplicantProfileForCompany = async (req, res) => {
   try {
     const { applicationId } = req.params;
@@ -378,7 +368,6 @@ export const getApplicantProfileForCompany = async (req, res) => {
       return res.status(404).json({ success: false, message: "Application not found" });
     }
 
-    // ✅ Only the company who owns this application can view it
     if (String(application.company) !== String(req.user.id)) {
       return res.status(403).json({ success: false, message: "Forbidden" });
     }
@@ -393,13 +382,12 @@ export const getApplicantProfileForCompany = async (req, res) => {
   }
 };
 
-// ✅ Resume for company (from applicationId)
 export const getApplicantResumeForCompany = async (req, res) => {
   try {
     const { applicationId } = req.params;
 
     const application = await Application.findById(applicationId)
-      .populate("jobSeeker", "resume") // only if you need jobSeeker.resume
+      .populate("jobSeeker", "resume")
       .select("company resumeSnapshot jobSeeker");
 
     if (!application) {
@@ -410,14 +398,10 @@ export const getApplicantResumeForCompany = async (req, res) => {
       return res.status(403).json({ success: false, message: "Forbidden" });
     }
 
-    // ✅ Best source = snapshot taken at apply time
     const resumeUrl =
       application.resumeSnapshot?.resumeUrl ||
       application.resumeSnapshot?.url ||
       null;
-
-    // If you never save snapshot and you store resume somewhere else, use it here:
-    // const resumeUrl = application.jobSeeker?.resume?.resumeUrl || null;
 
     if (!resumeUrl) {
       return res.status(404).json({ success: false, message: "Resume not found" });

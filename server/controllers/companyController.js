@@ -671,6 +671,7 @@ export const getCompanyJobsDashboard = async (req, res) => {
 
     const jobIds = jobs.map((j) => j._id);
 
+    // ✅ FIXED: Cast jobIds are already ObjectIds from .find(), but cast companyId for safety
     // Count applicants per job in one query — avoids N+1
     const applicantCounts = await Application.aggregate([
       { $match: { job: { $in: jobIds } } },
