@@ -21,77 +21,22 @@ export const analyzeApplicants = async (req, res) => {
       });
     }
 
-    // Build comprehensive analysis prompt
-    const prompt = `You are a professional recruitment analyst with expertise in talent assessment and hiring strategy.
+    // Build concise analysis prompt
+    const prompt = `You are a recruitment analyst.
+Analyze the following ${totalCount || applicants.length} applicants and provide:
+1. 📊 Summary (3–4 key insights)
+2. ⭐ Top 3 Candidates (Name + why recommended)
+3. 💼 Top 5 Most Common Skills
+4. 🚀 3 Clear Hiring Recommendations
 
-**Task:** Analyze the following ${totalCount || applicants.length} job applicants and provide a comprehensive, data-driven hiring summary.
+Rules:
+- Max 350 words
+- Be concise
+- No repetition
+- Focus on actionable insights
 
 **Applicant Data:**
-${JSON.stringify(applicants, null, 2)}
-
-**Instructions:**
-Provide a detailed analysis with the following structure:
-
-📊 **OVERVIEW SUMMARY**
-- Total applicants breakdown by status (New, Reviewing, Interview Scheduled, Rejected, Hired)
-- Overall quality assessment of the applicant pool
-- Key trends observed
-
-⭐ **TOP CANDIDATES** (Identify 3-5 best matches)
-For each top candidate:
-- Name and position applied for
-- Overall rating and experience level
-- Key strengths and standout qualities
-- Why they're recommended for interview/hiring
-- Potential concerns (if any)
-
-💼 **SKILL ANALYSIS**
-- Most frequently appearing skills (list top 10)
-- In-demand skills present in applicants
-- Skill gaps or rare expertise identified
-- Skill diversity assessment across the pool
-
-📈 **EXPERIENCE INSIGHTS**
-- Average experience level across applicants
-- Distribution: Entry-level, Mid-level, Senior
-- Notable career highlights or achievements
-- Industry experience patterns
-
-🌍 **GEOGRAPHIC & AVAILABILITY**
-- Location distribution of candidates
-- Remote vs. on-site availability
-- Geographic diversity assessment
-
-🚩 **RED FLAGS & CONCERNS**
-- Any concerning patterns (e.g., mass applications, inconsistencies)
-- Applications missing critical information
-- Candidates who may need additional screening
-- Status distribution issues (too many rejected/pending)
-
-✅ **ACTIONABLE RECOMMENDATIONS**
-1. **Immediate Actions:**
-   - Which 3-5 candidates to contact first
-   - Suggested interview timeline
-   
-2. **Strategic Insights:**
-   - Hiring priority order
-   - Positions that are attracting best talent
-   - Positions that may need revised requirements
-   
-3. **Next Steps:**
-   - Follow-up actions for recruiting team
-   - Communication templates needed
-   - Timeline for decision-making
-
-**Formatting Guidelines:**
-- Use clear headers with emojis
-- Bullet points for easy scanning
-- Be specific with names and data
-- Keep language professional but conversational
-- Provide actionable, practical advice
-- Highlight numbers and metrics
-
-Generate a comprehensive report that helps the recruiter make confident, data-driven hiring decisions.`;
+${JSON.stringify(applicants, null, 2)}`;
 
     // Use the stable Gemini 2.5 Flash model
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
