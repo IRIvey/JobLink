@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Sparkles, 
-  MapPin, 
-  DollarSign, 
-  Clock, 
-  Bookmark, 
+import {
+  Sparkles,
+  MapPin,
+  DollarSign,
+  Clock,
+  Bookmark,
   ExternalLink,
   TrendingUp,
   Building2,
@@ -41,9 +41,9 @@ const JobRecommendations = ({ userData, onViewCompany, onClose }) => {
           'Content-Type': 'application/json'
         }
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok && data.success) {
         setRecommendations(data.jobs || []);
       } else {
@@ -67,8 +67,8 @@ const JobRecommendations = ({ userData, onViewCompany, onClose }) => {
         }
       });
       const data = await response.json();
-      if (response.ok && data.success) {
-        const active = (data.applications || []).filter(
+      if (response.ok && Array.isArray(data.applications)) {
+        const active = data.applications.filter(
           (app) => !['rejected', 'withdrawn'].includes(app.status)
         );
         setActiveApplicationCount(active.length);
@@ -87,9 +87,9 @@ const JobRecommendations = ({ userData, onViewCompany, onClose }) => {
           'Content-Type': 'application/json'
         }
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok && data.success) {
         const savedJobIds = data.jobs.map(job => job._id);
         setSavedJobs(savedJobIds);
@@ -103,7 +103,7 @@ const JobRecommendations = ({ userData, onViewCompany, onClose }) => {
     try {
       const token = localStorage.getItem('token');
       const isSaved = savedJobs.includes(jobId);
-      
+
       const response = await fetch(`http://localhost:5001/api/jobs/${jobId}/save`, {
         method: isSaved ? 'DELETE' : 'POST',
         headers: {
@@ -111,9 +111,9 @@ const JobRecommendations = ({ userData, onViewCompany, onClose }) => {
           'Content-Type': 'application/json'
         }
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok && data.success) {
         if (isSaved) {
           setSavedJobs(savedJobs.filter(id => id !== jobId));
@@ -135,9 +135,9 @@ const JobRecommendations = ({ userData, onViewCompany, onClose }) => {
           'Content-Type': 'application/json'
         }
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok && data.success) {
         setSelectedJob(data.job);
       }
@@ -157,9 +157,9 @@ const JobRecommendations = ({ userData, onViewCompany, onClose }) => {
           'Content-Type': 'application/json'
         }
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok && data.success) {
         setApplicationStatus('success');
         setTimeout(() => {
@@ -186,11 +186,11 @@ const JobRecommendations = ({ userData, onViewCompany, onClose }) => {
     const hasMax = max != null && max > 0;
 
     if (hasMin && hasMax) {
-      return `${symbol}${(min/1000).toFixed(0)}k - ${symbol}${(max/1000).toFixed(0)}k`;
+      return `${symbol}${(min / 1000).toFixed(0)}k - ${symbol}${(max / 1000).toFixed(0)}k`;
     } else if (hasMin) {
-      return `${symbol}${(min/1000).toFixed(0)}k+`;
+      return `${symbol}${(min / 1000).toFixed(0)}k+`;
     } else if (hasMax) {
-      return `Up to ${symbol}${(max/1000).toFixed(0)}k`;
+      return `Up to ${symbol}${(max / 1000).toFixed(0)}k`;
     }
     return 'Not specified';
   };
@@ -289,11 +289,10 @@ const JobRecommendations = ({ userData, onViewCompany, onClose }) => {
             {/* Save Job Button */}
             <button
               onClick={() => handleSaveJob(job._id)}
-              className={`px-6 py-3 border rounded-lg font-medium flex items-center gap-2 ${
-                savedJobs.includes(job._id)
+              className={`px-6 py-3 border rounded-lg font-medium flex items-center gap-2 ${savedJobs.includes(job._id)
                   ? 'border-indigo-600 text-indigo-600 bg-indigo-50'
                   : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
+                }`}
             >
               <Bookmark size={20} fill={savedJobs.includes(job._id) ? 'currentColor' : 'none'} />
               {savedJobs.includes(job._id) ? 'Saved' : 'Save Job'}
@@ -400,9 +399,8 @@ const JobRecommendations = ({ userData, onViewCompany, onClose }) => {
         </div>
         <button
           onClick={() => handleSaveJob(job._id)}
-          className={`p-2 rounded-lg hover:bg-gray-100 transition-colors ${
-            savedJobs.includes(job._id) ? 'text-indigo-600' : 'text-gray-400'
-          }`}
+          className={`p-2 rounded-lg hover:bg-gray-100 transition-colors ${savedJobs.includes(job._id) ? 'text-indigo-600' : 'text-gray-400'
+            }`}
         >
           <Bookmark size={20} fill={savedJobs.includes(job._id) ? 'currentColor' : 'none'} />
         </button>
@@ -438,14 +436,14 @@ const JobRecommendations = ({ userData, onViewCompany, onClose }) => {
           </span>
         </div>
         <div className="flex gap-2">
-          <button 
+          <button
             onClick={() => handleViewDetails(job._id)}
             className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center gap-2 text-sm"
           >
             <ExternalLink size={16} />
             View Details
           </button>
-          <button 
+          <button
             onClick={() => setShowApplicationModal(job)}
             className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm"
           >
@@ -514,7 +512,7 @@ const JobRecommendations = ({ userData, onViewCompany, onClose }) => {
           <h2 className="text-xl font-semibold text-gray-900">
             Top Matches ({recommendations.length} jobs)
           </h2>
-          <button 
+          <button
             onClick={fetchRecommendations}
             className="px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
           >
@@ -551,7 +549,7 @@ const JobRecommendations = ({ userData, onViewCompany, onClose }) => {
       {selectedJob && (
         <JobDetailsModal job={selectedJob} onClose={() => setSelectedJob(null)} />
       )}
-      
+
       {showApplicationModal && (
         <ApplicationModal job={showApplicationModal} onClose={() => {
           setShowApplicationModal(null);
