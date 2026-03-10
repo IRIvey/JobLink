@@ -22,10 +22,12 @@ const JobRecommendations = ({ userData, onViewCompany, onClose }) => {
   const [selectedJob, setSelectedJob] = useState(null);
   const [showApplicationModal, setShowApplicationModal] = useState(null);
   const [applicationStatus, setApplicationStatus] = useState(null);
+  const [activeApplicationCount, setActiveApplicationCount] = useState(0);
 
   useEffect(() => {
     fetchRecommendations();
     fetchSavedJobs();
+    fetchApplicationCount();
   }, []);
 
   const fetchRecommendations = async () => {
@@ -52,6 +54,27 @@ const JobRecommendations = ({ userData, onViewCompany, onClose }) => {
       setError('Unable to connect to the server');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchApplicationCount = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5001/api/jobseekers/applications', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        const active = (data.applications || []).filter(
+          (app) => !['rejected', 'withdrawn'].includes(app.status)
+        );
+        setActiveApplicationCount(active.length);
+      }
+    } catch (error) {
+      console.error('Error fetching application count:', error);
     }
   };
 
@@ -158,11 +181,16 @@ const JobRecommendations = ({ userData, onViewCompany, onClose }) => {
     if (!salary) return 'Not specified';
     const { min, max, currency = 'USD' } = salary;
     const symbol = currency === 'USD' ? '$' : currency;
-    
-    if (min && max) {
+
+    const hasMin = min != null && min > 0;
+    const hasMax = max != null && max > 0;
+
+    if (hasMin && hasMax) {
       return `${symbol}${(min/1000).toFixed(0)}k - ${symbol}${(max/1000).toFixed(0)}k`;
-    } else if (min) {
+    } else if (hasMin) {
       return `${symbol}${(min/1000).toFixed(0)}k+`;
+    } else if (hasMax) {
+      return `Up to ${symbol}${(max/1000).toFixed(0)}k`;
     }
     return 'Not specified';
   };
@@ -474,7 +502,7 @@ const JobRecommendations = ({ userData, onViewCompany, onClose }) => {
             </div>
             <div>
               <p className="text-sm text-gray-600">Active Applications</p>
-              <p className="text-2xl font-bold text-gray-900">0</p>
+              <p className="text-2xl font-bold text-gray-900">{activeApplicationCount}</p>
             </div>
           </div>
         </div>
