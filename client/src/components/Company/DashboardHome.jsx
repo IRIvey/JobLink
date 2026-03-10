@@ -250,10 +250,7 @@ const DashboardHome = () => {
                   </div>
 
                   <div className="flex items-center gap-4 text-sm">
-                    <span className="flex items-center gap-1 text-gray-600">
-                      <Eye size={14} className="text-gray-400" /> 
-                      <span className="font-medium">{job.views}</span> views
-                    </span>
+                   
                     {/* Only show conversion rate when both values are available */}
                     {job.views > 0 && job.applicants > 0 && (
                       <>

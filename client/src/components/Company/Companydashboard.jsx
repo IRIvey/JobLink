@@ -262,31 +262,7 @@ const CompanyDashboard = () => {
           {renderContent()}
         </main>
 
-        {/* Right Sidebar */}
-        <aside className="w-64 flex-shrink-0">
-          <div className="space-y-4 sticky top-24">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-              <h3 className="font-bold text-gray-900 mb-4 text-lg">Profile Strength</h3>
-              <div className="mb-4">
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div className="bg-indigo-600 h-2.5 rounded-full" style={{ width: "60%" }}></div>
-                </div>
-                <p className="text-base text-gray-600 mt-2 font-medium">60% Complete</p>
-              </div>
-              <ul className="space-y-2.5 text-base">
-                <li className="flex items-center gap-2 text-gray-600">
-                  <div className="w-2.5 h-2.5 bg-green-500 rounded-full"></div>Email verified
-                </li>
-                <li className="flex items-center gap-2 text-gray-600">
-                  <div className="w-2.5 h-2.5 bg-gray-300 rounded-full"></div>Add company info
-                </li>
-                <li className="flex items-center gap-2 text-gray-600">
-                  <div className="w-2.5 h-2.5 bg-gray-300 rounded-full"></div>Post first job
-                </li>
-              </ul>
-            </div>
-          </div>
-        </aside>
+      
       </div>
     </div>
   );
