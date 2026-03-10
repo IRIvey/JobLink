@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   client:
     build:
@@ -19,11 +21,11 @@ services:
     deploy:
       resources:
         limits:
+          cpus: '1.0'
+          memory: 1G  # Increased from 512M to prevent white screen
+        reservations:
           cpus: '0.5'
           memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
 
   server:
     build:
@@ -38,31 +40,33 @@ services:
       - ./server/.env
     environment:
       - NODE_ENV=development
+      # IMPORTANT: Use 'mongo' instead of 'localhost' in your connection string
+      - MONGO_URI=mongodb://mongo:27017/your_database_name 
     depends_on:
       - mongo
     deploy:
       resources:
         limits:
+          cpus: '1.0'
+          memory: 1G  # Increased to handle API requests without crashing
+        reservations:
           cpus: '0.5'
           memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
 
   mongo:
     image: mongo:latest
     ports:
       - "27017:27017"
     volumes:
-      - mongo-data:/data/db
+      - mongo-data:/data/db # This keeps your data safe between restarts
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 512M
+          cpus: '1.0'
+          memory: 1.5G # MongoDB is memory-hungry; 512M was likely killing it
         reservations:
-          cpus: '0.25'
-          memory: 256M
+          cpus: '0.5'
+          memory: 1G
 
 volumes:
-  mongo-data:
+  mongo-data: # Declaring the named volume for persistence
