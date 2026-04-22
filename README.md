@@ -193,31 +193,6 @@ Company Profile → Job Posting → Review Applications → AI Summary → Short
 
 ---
 
-## Team Contributions
-
-### Israt Risha Ivey (220042103)
-
-- **JobSeeker Dashboard:** Implemented job tracking and status monitoring
-- **Job Search System:** Built skill-based recommendation engine with fuzzy search integration
-- **Job Posting:** Contributed to company-side job creation functionality
-- **Analytics Dashboard:** Developed real-time hiring statistics and visualizations
-
-### Zannatul Adon Sabiha (220042123)
-
-- **Resume Builder:** Designed input forms and integrated PDF generation
-- **Dashboards:** Developed both JobSeeker and Company dashboard interfaces
-- **Profile Management:** Implemented job seeker profile forms and workflows
-- **AI Application Summary:** Integrated AI-powered candidate summarization feature
-
-### Tanzia Rahman (220042129)
-
-- **Company Dashboard:** Built hiring team interface with applicant pipeline visibility
-- **Company Profile Management:** Designed company profile forms and data persistence
-- **Job Posting System:** Implemented job listing creation and management
-- **Database Design:** Architected MongoDB schema and entity relationships
-
----
-
 ## Future Enhancements
 
 ### Short Term
